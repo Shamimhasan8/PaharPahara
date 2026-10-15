@@ -45,58 +45,88 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
+      {/* Header with personalized greeting */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight" lang={lang}>{t.dashboard.title}</h1>
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/80" lang={lang}>
+            {greeting(lang)}
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight mt-0.5" lang={lang}>{t.dashboard.title}</h1>
           <p className="text-sm text-muted-foreground mt-1" lang={lang}>{t.dashboard.subtitle}</p>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-          <Activity className="h-3.5 w-3.5 text-emerald-500" />
-          <span lang={lang}>{relativeTime(new Date().toISOString(), lang)}</span>
+        <div className="flex items-center gap-3 text-xs">
+          <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span lang={lang}>{lang === 'en' ? 'Live' : 'লাইভ'}</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground">
+            <Activity className="h-3.5 w-3.5" />
+            <span lang={lang}>{relativeTime(new Date().toISOString(), lang)}</span>
+          </div>
         </div>
       </div>
 
       {/* BMD banner */}
       {topAlert ? (
-        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
-          <CardContent className="py-3 px-4 flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-amber-900 dark:text-amber-200" lang={lang}>{t.dashboard.bmdBanner}</span>
-                {topAlert.hasValidityConflict && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-200 text-rose-800 dark:bg-rose-900 dark:text-rose-200 font-medium">
-                    {lang === 'en' ? 'VALIDITY CONFLICT' : 'বৈধতা অমিল'}
-                  </span>
-                )}
-              </div>
-              <div className="text-sm text-amber-800 dark:text-amber-300 mt-0.5" lang={lang}>
-                {lang === 'en' ? topAlert.headlineEn : topAlert.headlineBn}
-              </div>
-              <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-1">
-                {lang === 'en' ? 'Sent' : 'প্রেরিত'}: {fmtDate(topAlert.sentAt, lang)} •
-                {topAlert.expiresAt && (
-                  <> {lang === 'en' ? 'Expires (XML)' : 'মেয়াদ (XML)'}: {fmtDate(topAlert.expiresAt, lang)}</>
-                )}
-                {topAlert.textEffectiveEnd && (
-                  <> • {lang === 'en' ? 'Text window' : 'টেক্সট উইন্ডো'}: {fmtDateOnly(topAlert.textEffectiveStart, lang)} → {fmtDateOnly(topAlert.textEffectiveEnd, lang)}</>
-                )}
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-stretch">
+              {/* Left accent stripe */}
+              <div className="w-1.5 bg-amber-500 shrink-0" />
+              <div className="flex-1 py-3 px-4 flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-amber-900 dark:text-amber-200" lang={lang}>{t.dashboard.bmdBanner}</span>
+                    {topAlert.hasValidityConflict && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-200 text-rose-800 dark:bg-rose-900 dark:text-rose-200 font-semibold uppercase tracking-wide">
+                        {lang === 'en' ? 'Validity conflict' : 'বৈধতা অমিল'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-amber-800 dark:text-amber-300 mt-0.5 leading-snug" lang={lang}>
+                    {lang === 'en' ? topAlert.headlineEn : topAlert.headlineBn}
+                  </div>
+                  <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-1.5 flex items-center gap-1.5 flex-wrap">
+                    <span>{lang === 'en' ? 'Sent' : 'প্রেরিত'}: {fmtDate(topAlert.sentAt, lang)}</span>
+                    {topAlert.expiresAt && (
+                      <span className="flex items-center gap-1">
+                        <span className="opacity-50">•</span>
+                        <span>{lang === 'en' ? 'XML expires' : 'XML মেয়াদ'}: {fmtDate(topAlert.expiresAt, lang)}</span>
+                      </span>
+                    )}
+                    {topAlert.textEffectiveEnd && (
+                      <span className="flex items-center gap-1">
+                        <span className="opacity-50">•</span>
+                        <span>{lang === 'en' ? 'Text window' : 'টেক্সট উইন্ডো'}: {fmtDateOnly(topAlert.textEffectiveStart, lang)} → {fmtDateOnly(topAlert.textEffectiveEnd, lang)}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setTab('preparedness')} className="shrink-0 self-center border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/40">
+                  {lang === 'en' ? 'Details' : 'বিস্তারিত'}
+                </Button>
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setTab('preparedness')} className="shrink-0">
-              {lang === 'en' ? 'Details' : 'বিস্তারিত'}
-            </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800">
-          <CardContent className="py-3 px-4 flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0" />
-            <div className="flex-1">
-              <div className="font-semibold text-emerald-900 dark:text-emerald-200" lang={lang}>{t.dashboard.noActiveAlert}</div>
-              <div className="text-[11px] text-emerald-700 dark:text-emerald-400" lang={lang}>
-                {lang === 'en' ? 'Absence of an alert does not establish safety.' : 'সতর্কতার অভাব নিরাপত্তা নিশ্চিত করে না।'}
+        <Card className="border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex items-stretch">
+              <div className="w-1.5 bg-emerald-500 shrink-0" />
+              <div className="flex-1 py-3 px-4 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-emerald-900 dark:text-emerald-200" lang={lang}>{t.dashboard.noActiveAlert}</div>
+                  <div className="text-[11px] text-emerald-700 dark:text-emerald-400" lang={lang}>
+                    {lang === 'en' ? 'Absence of an alert does not establish safety.' : 'সতর্কতার অভাব নিরাপত্তা নিশ্চিত করে না।'}
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -315,4 +345,21 @@ function JobStateMini({ state }: { state: string }) {
   return (
     <span className={`h-2 w-2 rounded-full ${colors[state] ?? colors.queued}`} title={state} />
   )
+}
+
+// Time-of-day greeting in the user's language
+function greeting(lang: Lang): string {
+  const hour = new Date().getHours()
+  if (lang === 'bn') {
+    if (hour < 6) return 'শুভ রাত্রি'
+    if (hour < 12) return 'শুভ সকাল'
+    if (hour < 17) return 'শুভ অপরাহ্ন'
+    if (hour < 20) return 'শুভ সন্ধ্যা'
+    return 'শুভ রাত্রি'
+  }
+  if (hour < 6) return 'Good night'
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  if (hour < 20) return 'Good evening'
+  return 'Good night'
 }

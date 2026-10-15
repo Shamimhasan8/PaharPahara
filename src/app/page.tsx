@@ -28,16 +28,18 @@ import { JobsView } from '@/components/views/jobs-view'
 import { PreparednessView } from '@/components/views/preparedness-view'
 import { NotificationsView } from '@/components/views/notifications-view'
 import { AuditLogView } from '@/components/views/audit-log-view'
+import { CompareView } from '@/components/views/compare-view'
 import { DhakaClock } from '@/components/pahar/dhaka-clock'
 import { ThemeToggle } from '@/components/pahar/theme-toggle'
 import { CommandPalette } from '@/components/pahar/command-palette'
+import { KeyboardShortcutsHelp, useKeyboardShortcuts } from '@/components/pahar/keyboard-shortcuts'
 
-type Tab = 'dashboard' | 'sites' | 'cases' | 'reports' | 'sources' | 'jobs' | 'preparedness' | 'notifications' | 'audit'
+type Tab = 'dashboard' | 'sites' | 'cases' | 'reports' | 'sources' | 'jobs' | 'preparedness' | 'notifications' | 'audit' | 'compare'
 
 const ROLE_TABS: Record<Role, Tab[]> = {
-  admin: ['dashboard', 'sites', 'cases', 'reports', 'sources', 'jobs', 'preparedness', 'notifications', 'audit'],
-  doe_reviewer: ['dashboard', 'sites', 'cases', 'reports', 'sources', 'jobs', 'notifications'],
-  forest_officer: ['dashboard', 'sites', 'cases', 'reports', 'sources', 'notifications'],
+  admin: ['dashboard', 'sites', 'cases', 'compare', 'reports', 'sources', 'jobs', 'preparedness', 'notifications', 'audit'],
+  doe_reviewer: ['dashboard', 'sites', 'cases', 'compare', 'reports', 'sources', 'jobs', 'notifications'],
+  forest_officer: ['dashboard', 'sites', 'cases', 'compare', 'reports', 'sources', 'notifications'],
   preparedness: ['dashboard', 'sites', 'preparedness', 'reports', 'sources', 'notifications'],
   viewer: ['dashboard', 'sites', 'reports', 'sources'],
 }
@@ -98,6 +100,22 @@ export default function Home() {
     },
     enabled: !!session,
     refetchInterval: 60 * 1000,
+  })
+
+  // Global keyboard shortcuts (g d/g s/g c/?/L/T) — enabled only when logged in
+  const { helpOpen, setHelpOpen } = useKeyboardShortcuts({
+    enabled: !!session,
+    onNavigate: (tb) => {
+      const role = (session?.user as { role?: Role } | undefined)?.role
+      if (role) {
+        const allowed = ROLE_TABS[role] ?? ['dashboard']
+        if (allowed.includes(tb as Tab)) setTab(tb as Tab)
+      }
+    },
+    onToggleLang: () => setLang((l) => (l === 'en' ? 'bn' : 'en')),
+    onToggleTheme: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
+    onOpenHelp: () => setHelpOpen(true),
+    onOpenCommandPalette: () => setCmdOpen(true),
   })
 
   if (status === 'loading') {
@@ -291,6 +309,9 @@ export default function Home() {
           onSignOut={() => signOut({ callbackUrl: '/' })}
         />
       )}
+
+      {/* Keyboard shortcuts help (? to open) */}
+      <KeyboardShortcutsHelp open={helpOpen} onOpenChange={setHelpOpen} lang={lang} />
     </div>
   )
 }
@@ -364,6 +385,8 @@ function DashboardRouter({
       return <NotificationsView data={data} lang={lang} reload={reload} />
     case 'audit':
       return <AuditLogView lang={lang} role={role} />
+    case 'compare':
+      return <CompareView data={data} lang={lang} />
   }
 }
 

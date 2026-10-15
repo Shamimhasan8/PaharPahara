@@ -37,7 +37,9 @@ export function ChattogramMap({ sites, bulletins, cases, lang, selectedSiteId, o
   const xScale = (lng: number) => pad + ((lng - minLng) / (maxLng - minLng)) * (width - 2 * pad)
   const yScale = (lat: number) => pad + (1 - (lat - minLat) / (maxLat - minLat)) * (height_ - 2 * pad)
 
-  // Smart label placement: spread labels around each site so they don't collide
+  // Smart label placement: spread labels around each site so they don't collide.
+  // Uses larger offsets + leader lines so labels are clearly separated from markers
+  // and from each other.
   const placements = useMemo(() => {
     const result: Record<string, LabelPlacement> = {}
     // Inline scale functions (avoid stale-closure issues with React Compiler)
@@ -46,27 +48,29 @@ export function ChattogramMap({ sites, bulletins, cases, lang, selectedSiteId, o
     const positions = sites.map((s) => ({ id: s.id, x: sx(s.lng), y: sy(s.lat) }))
     // Sort by Y then X so we can place top-to-bottom, left-to-right
     const sorted = [...positions].sort((a, b) => a.y - b.y || a.x - b.x)
+    // Larger offsets so labels are clearly separated from markers
+    const OFFSET = 36
     for (let i = 0; i < sorted.length; i++) {
       const s = sorted[i]
       const placed: Array<{ x: number; y: number }> = Object.entries(result).map(([id]) => {
         const p = positions.find((p) => p.id === id)!
         return { x: p.x, y: p.y }
       })
-      // Try placements in order: above, right, below, left
+      // Try placements in order of preference, with bigger offsets
       const candidates: Array<{ dir: LabelPlacement; dx: number; dy: number }> = [
-        { dir: 'above', dx: 0, dy: -22 },
-        { dir: 'right', dx: 28, dy: 0 },
-        { dir: 'below', dx: 0, dy: 22 },
-        { dir: 'left', dx: -28, dy: 0 },
+        { dir: 'above', dx: 0, dy: -OFFSET },
+        { dir: 'right', dx: OFFSET + 8, dy: 0 },
+        { dir: 'below', dx: 0, dy: OFFSET },
+        { dir: 'left', dx: -OFFSET - 8, dy: 0 },
       ]
       let chosen: LabelPlacement = 'above'
       let bestScore = -Infinity
       for (const c of candidates) {
         const tx = s.x + c.dx
         const ty = s.y + c.dy
-        // Penalise off-canvas
-        if (tx < 50 || tx > width - 50 || ty < 30 || ty > height_ - 30) continue
-        // Score = distance to nearest placed label
+        // Penalise off-canvas (need room for label + padding)
+        if (tx < 60 || tx > width - 60 || ty < 24 || ty > height_ - 24) continue
+        // Score = distance to nearest placed label (maximise)
         let minDist = Infinity
         for (const p of placed) {
           const d = Math.hypot(p.x - tx, p.y - ty)
@@ -177,10 +181,15 @@ export function ChattogramMap({ sites, bulletins, cases, lang, selectedSiteId, o
           const placement = placements[site.id] ?? 'above'
           const activeCount = activeCasesBySite[site.id] ?? 0
 
-          // Label position based on smart placement
-          const labelDx = placement === 'left' ? -22 : placement === 'right' ? 22 : 0
-          const labelDy = placement === 'above' ? -22 : placement === 'below' ? 22 : 0
+          // Label position based on smart placement (larger offset)
+          const labelDx = placement === 'left' ? -44 : placement === 'right' ? 44 : 0
+          const labelDy = placement === 'above' ? -36 : placement === 'below' ? 36 : 0
           const labelAnchor = placement === 'left' ? 'end' : placement === 'right' ? 'start' : 'middle'
+          // Leader line endpoints (from marker edge to label edge)
+          const leaderX1 = placement === 'left' ? -12 : placement === 'right' ? 12 : 0
+          const leaderY1 = placement === 'above' ? -8 : placement === 'below' ? 8 : 0
+          const leaderX2 = labelDx + (placement === 'left' ? 4 : placement === 'right' ? -4 : 0)
+          const leaderY2 = labelDy + (placement === 'above' ? 6 : placement === 'below' ? -6 : 0)
 
           // Hover tooltip position
           const tooltipLeft = site.lng > 91.85
@@ -215,6 +224,17 @@ export function ChattogramMap({ sites, bulletins, cases, lang, selectedSiteId, o
                 </g>
               )}
 
+              {/* Leader line from marker to label */}
+              <line
+                x1={leaderX1}
+                y1={leaderY1}
+                x2={leaderX2}
+                y2={leaderY2}
+                stroke={isSelected || isHovered ? 'oklch(0.42 0.09 152 / 0.7)' : 'oklch(0.50 0.05 150 / 0.35)'}
+                strokeWidth={isSelected || isHovered ? 1.2 : 0.7}
+                strokeDasharray="2 2"
+              />
+
               {/* Label with smart placement */}
               <g transform={`translate(${labelDx} ${labelDy})`}>
                 {/* Background pill sized to text */}
@@ -224,8 +244,8 @@ export function ChattogramMap({ sites, bulletins, cases, lang, selectedSiteId, o
                   width={shortLabel.length * 6 + 10}
                   height="14"
                   rx="3"
-                  fill="oklch(1 0 0 / 0.94)"
-                  stroke={isSelected || isHovered ? 'oklch(0.42 0.09 152 / 0.6)' : 'oklch(0.85 0.02 150)'}
+                  fill="oklch(1 0 0 / 0.96)"
+                  stroke={isSelected || isHovered ? 'oklch(0.42 0.09 152 / 0.7)' : 'oklch(0.85 0.02 150)'}
                   strokeWidth={isSelected || isHovered ? 1 : 0.5}
                 />
                 <text
@@ -300,8 +320,11 @@ export function ChattogramMap({ sites, bulletins, cases, lang, selectedSiteId, o
         </g>
       </svg>
 
-      <div className="absolute top-3 left-3 bg-card/90 backdrop-blur px-2 py-1 rounded text-[10px] text-muted-foreground border border-border">
-        {lang === 'en' ? 'Chattogram region — WGS84 display' : 'চট্টগ্রাম অঞ্চল — WGS84 প্রদর্শন'}
+      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-card/90 backdrop-blur px-2.5 py-1.5 rounded-md text-[10px] text-muted-foreground border border-border shadow-sm">
+        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+        <span className="font-medium">{lang === 'en' ? 'Chattogram region' : 'চট্টগ্রাম অঞ্চল'}</span>
+        <span className="opacity-60">·</span>
+        <span className="font-mono opacity-70">WGS84</span>
       </div>
     </div>
   )

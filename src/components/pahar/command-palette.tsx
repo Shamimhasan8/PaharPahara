@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import { Search, CornerDownLeft, ArrowRight, Sun, Moon, Globe, LogOut, FileText, MapPin, Mountain, Bell, Activity, ShieldAlert, ScrollText, type LucideIcon } from 'lucide-react'
+import { Search, CornerDownLeft, ArrowRight, Sun, Moon, Globe, LogOut, FileText, MapPin, Mountain, Bell, Activity, ShieldAlert, ScrollText, GitCompare, type LucideIcon } from 'lucide-react'
 import type { DashboardDataDTO, Role } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 import { dict } from '@/lib/i18n'
@@ -72,6 +72,7 @@ export function CommandPalette({
     notifications: Bell,
     preparedness: ShieldAlert,
     audit: ScrollText,
+    compare: GitCompare,
   }
 
   const items: CommandItem[] = useMemo(() => {

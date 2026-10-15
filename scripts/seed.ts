@@ -687,6 +687,93 @@ async function main() {
     },
   })
 
+  // Second report version for Nagin (v2 — demonstrates the diff feature).
+  // Same case, but with an updated rationale + nextAction reflecting post-field-visit changes.
+  const naginSnapV2 = {
+    caseKey: 'NAGIN-2026-06-18',
+    siteNameEn: 'Nagin Hill',
+    siteNameBn: 'নাগিন পাহাড়',
+    siteDistrict: 'Chattogram — Bayezid',
+    jurisdiction: 'verified_forest',
+    status: 'reviewed',
+    disturbanceType: 'vegetation_clearance',
+    detectedAt: '2026-06-19T03:00:00.000Z',
+    before: {
+      providerAssetId: 'S2A_T43QEE_20260511T045551',
+      acquiredAt: '2026-05-11T04:55:51.000Z',
+      coveragePct: 95,
+      qaStatus: 'ok',
+      sha256: sha256('nagin_before'),
+    },
+    after: {
+      providerAssetId: 'S2B_T43QEE_20260618T045631',
+      acquiredAt: '2026-06-18T04:56:31.000Z',
+      coveragePct: 91,
+      qaStatus: 'ok',
+      sha256: sha256('nagin_after'),
+    },
+    changedAreaHa: 2.34, // Updated — refined measurement after field visit
+    ndviDelta: -0.36,
+    bareSoilDelta: 0.55,
+    dwTreeProbDelta: -0.43,
+    dwBareProbDelta: 0.51,
+    coveragePct: 91,
+    methodVersion: 'cutwatch-v0.4-spectral-baseline', // Updated method version
+    screeningRule: 'salimpur-monitor-v0.2',
+    uncertaintyNotes:
+      'Updated 2026-10-09 after re-measurement. Forest Department jurisdiction verified. Field officer corroborated on 2026-06-27. Refined changed-area estimate from 2.18 to 2.34 ha using higher-quality Cloud Score+ mask. DEM slope context max 48°.',
+    assessment: {
+      decision: 'approved',
+      rationale:
+        'Updated assessment after re-measurement with Cloud Score+ v0.4 mask. Confirmed vegetation clearance of 2.34 ha (refined from 2.18 ha) within verified Forest Department jurisdiction. Dynamic World tree probability dropped 0.43, bare probability rose 0.51. Field visit corroborated on 2026-06-27. Forward to enforcement under Environment Conservation Act section 6B with refined area estimate.',
+      permitStatus: 'missing',
+      nextAction: 'Forward to DoE enforcement for clearance/permit check under ECA 6B with refined area estimate (2.34 ha)',
+      reviewerName: 'Tanvir Hossain',
+      createdAt: '2026-10-09T08:00:00.000Z',
+    },
+    caseRevision: 4,
+    requestedBy: users[1].id,
+    requestedAt: '2026-10-09T08:30:00.000Z',
+    lang: 'en',
+  }
+  await db.reportVersion.create({
+    data: {
+      caseId: naginCase.id,
+      version: 2,
+      status: 'reviewed',
+      factSnapshotJson: JSON.stringify(naginSnapV2),
+      pdfUri: '/assets/reports/NAGIN-2026-06-18-v2.pdf',
+      pdfSha256: sha256('nagin_report_v2'),
+      requestedById: users[1].id,
+    },
+  })
+
+  // Add a couple of admin notifications so the bell badge is visible for admin too
+  await db.notification.create({
+    data: {
+      userId: users[0].id, // admin
+      dedupKey: 'admin_seed_completed',
+      category: 'job',
+      titleEn: 'Database seed completed',
+      titleBn: 'ডেটাবেস সীড সম্পন্ন',
+      bodyEn: 'Historical replay dataset loaded: 3 sites, 3 cases, 9 sources, 5 jobs, 4 notifications.',
+      bodyBn: 'ঐতিহাসিক রিপ্লে ডেটাসেট লোড হয়েছে: ৩ সাইট, ৩ কেস, ৯ উৎস, ৫ জব, ৪ বিজ্ঞপ্তি।',
+      severity: 'info',
+    },
+  })
+  await db.notification.create({
+    data: {
+      userId: users[0].id, // admin
+      dedupKey: 'admin_ee_export_failed',
+      category: 'source',
+      titleEn: 'Earth Engine export job failed',
+      titleBn: 'Earth Engine এক্সপোর্ট জব ব্যর্থ',
+      bodyEn: 'EE service account not configured. System has fallen back to historical replay (2026-07-09).',
+      bodyBn: 'EE সার্ভিস অ্যাকাউন্ট কনফিগার করা নেই। সর্বশেষ historical replay অ্যাসেটে ফিরে গেছে (২০২৬-০৭-০৯)।',
+      severity: 'warning',
+    },
+  })
+
   console.log('Seeded review history + assessment + report')
 
   // ---------- Weather: IMERG half-hour intervals for Chashma around 8 July ----------

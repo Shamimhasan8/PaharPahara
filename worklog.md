@@ -201,3 +201,88 @@ QA was performed with agent-browser at 1440x900 and 375x812 viewports, plus VLM 
 8. **Internationalization of dates**: Some dates still render in en-GB format even in BN mode (e.g. audit log timestamps). Audit all `fmtDate` callers for proper lang propagation.
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 3 — webDevReview (cron job 461689, 2026-10-15 23:50 BST)
+
+### Current project status description / assessment
+Round 2 added theme toggle, Dhaka clock, Cmd+K command palette, audit log view, expandable sources, and case search. This round focused on (a) fixing the remaining visual polish issues from Round 2 QA and (b) adding 3 new high-value features: case comparison view, keyboard shortcuts help, and report version diff.
+
+QA via agent-browser (1440×900 + 375×812) + VLM confirmed: server healthy (HTTP 200, no console errors), all Round 2 features working. Identified residual issues: map labels still slightly cramped (offsets too small), Reports view had excessive whitespace when few reports, no diff capability for multi-version cases, no keyboard shortcuts help, no case comparison tool.
+
+### Completed modifications / verification results
+
+**Visual polish (Impl 1 + 2):**
+- Rewrote `ChattogramMap` label placement: increased offset from 22→36px, added dashed leader lines from marker to label (visible when selected/hovered), improved label background opacity (0.94→0.96) + stroke. Labels now clearly separated from markers and each other.
+- Polished map "Chattogram region" overlay: now a pill with pulsing green dot + "WGS84" mono badge instead of plain text.
+- Rewrote BMD banner: added left accent stripe (amber for alert, emerald for no-alert), icon now in a colored rounded-lg badge (h-9 w-9), button aligned with `self-center`, metadata uses `•` separators with opacity-50.
+- Added personalized greeting above dashboard title ("Good morning/afternoon/evening" / "শুভ সকাল/অপরাহ্ন/সন্ধ্যা") based on local hour.
+- Added "Live" status indicator with pulsing green dot next to the relative-time clock in dashboard header.
+
+**New feature: Case Comparison view (Compare tab)**
+- New `CompareView` component accessible via a "Compare" nav tab (added to admin, doe_reviewer, forest_officer roles).
+- Case picker with checkboxes (max 4 cases), disabled state when at limit.
+- Comparison grid renders Before images side-by-side, then After images side-by-side, then a metrics table with rows for: Site, Status, Changed area, NDVI Δ, Bare-soil Δ, DW tree/bare prob Δ, Coverage, Detected at, Disturbance type, Method version. Warning-tone coloring (amber) for values crossing thresholds.
+- "Extremes" card showing highest/lowest values per metric across selected cases (e.g. "Highest changed area: NAGIN: 2.34 ha", "Lowest: SALIMPUR: 0.42 ha").
+- Empty state with icon + helper text when <2 cases selected.
+- Verified: selecting CHASHMA + NAGIN shows side-by-side before/after sliders + metrics table + extremes card.
+
+**New feature: Keyboard shortcuts help dialog**
+- New `KeyboardShortcutsHelp` component + `useKeyboardShortcuts` hook.
+- Press `?` anywhere (except in text fields) to open the help dialog.
+- Shortcuts implemented:
+  - `g d` → Dashboard, `g s` → Sites, `g c` → Cases, `g r` → Reports, `g h` → Source Health, `g j` → Jobs, `g p` → Preparedness, `g n` → Notifications, `g a` → Audit Log (admin)
+  - `?` → toggle help dialog
+  - `L` → toggle language (EN/BN)
+  - `T` → toggle theme (dark/light)
+  - `Esc` → close dialog
+  - `⌘K` → command palette (already existed)
+- Two-key navigation: pressing `g` starts a 700ms window; next key navigates if it matches a tab.
+- Help dialog shows two columns (Navigation + Actions) with kbd-styled key hints.
+- Ignores keypresses inside `<input>`, `<textarea>`, `<select>`, `contenteditable`.
+- Verified: pressing `?` opens dialog with all shortcuts listed; `g d` navigates to Dashboard.
+
+**New feature: Report version diff drawer**
+- Seeded a v2 report for the NAGIN case (refined measurement: 2.18→2.34 ha, method v0.3→v0.4, updated rationale). Also seeded 2 admin notifications so the bell badge is visible for admin too.
+- Rewrote `ReportsView`: now groups reports by case, shows version count badge per case, and a "Diff" button when a case has ≥2 versions.
+- Added 4 stat cards at top: Total reports, Reviewed, Draft, Field corroborated.
+- `ReportDiffDrawer` component: modal overlay with 3-column table (Field, v1, v2), changed values highlighted (red strikethrough for old, green bold for new), footer with color legend + field count.
+- Parses both fact-snapshot JSONs, diffs all keys, shows removed/changed/new values.
+- Verified: clicking Diff on NAGIN case opens drawer showing v1→v2 changes (changedAreaHa 2.18→2.34, methodVersion v0.3→v0.4, rationale updated, etc.).
+
+**Bug fix: stale Prisma client cache**
+- After re-seeding (adding v2 report + admin notifications), the dev server's in-memory Prisma client cache returned stale data (only v1 report). Fixed by running `bun run db:generate` + restarting the dev server. Dashboard API now correctly returns both report versions.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Dashboard shows "GOOD AFTERNOON" greeting + BMD banner with left accent stripe + icon in colored badge.
+  - ✓ Map labels use leader lines + larger offsets — non-overlapping (verified by VLM).
+  - ✓ "Compare" tab visible in nav for admin/reviewer/forest roles.
+  - ✓ Compare view: selecting 2 cases shows before/after side-by-side + metrics table + extremes card.
+  - ✓ Pressing `?` opens keyboard shortcuts help dialog with 2 columns.
+  - ✓ Reports view: 4 stat cards, NAGIN case shows "2 version(s)" badge + Diff button.
+  - ✓ Diff drawer: 3-column table with red/green highlighting for changed fields.
+  - ✓ Admin now has 2 unread notifications (bell badge shows "2").
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Compare view on mobile**: The side-by-side image grid uses `repeat(N, 1fr)` which can get very narrow on mobile with 4 cases. Consider stacking vertically on small screens.
+2. **Diff drawer field truncation**: Object values in the diff table are truncated to 60 chars. Long rationale text gets cut off — consider a "show full" expand on click.
+3. **Keyboard shortcut `g a` (audit)**: Only works for admin role; non-admins press `g a` and nothing happens (silent no-op). Could show a toast "Audit log requires admin role".
+4. **Map leader lines visibility**: Leader lines are quite subtle (0.7px stroke, 0.35 opacity). Could increase visibility on hover/selected state (already done — 1.2px stroke, 0.7 opacity when selected/hovered).
+
+**Recommended next-phase work:**
+1. **Site comparison mode**: Similar to case comparison, but for sites — compare rainfall totals, source-health, active-case counts across 2-N sites.
+2. **Bookmarkable views**: Add URL hash for current tab + selected case/site so users can share/refresh without losing state.
+3. **Print stylesheet extraction**: Move the inline printable-report CSS to a shared stylesheet; add a "Download PDF" button that uses the browser's print-to-PDF.
+4. **WebSocket live updates**: Replace 60s polling with a socket.io mini-service for real-time BMD alerts / job completions.
+5. **Bulk case actions**: Multi-select cases → bulk approve/reject with confirmation dialog.
+6. **Case timeline visualization**: A horizontal timeline showing case lifecycle (candidate → under_review → field_verification → reviewed) with timestamps.
+7. **Source adapter health history**: Track access-state changes over time and show a sparkline per adapter.
+8. **Internationalization audit**: Some date strings still render in en-GB even in BN mode (audit log timestamps, some chart axes).
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
