@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers, Search, X } from 'lucide-react'
+import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers, Search, X, Link2 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { CaseDTO, DashboardDataDTO, Role } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 import { dict } from '@/lib/i18n'
 import { BeforeAfterSlider } from '@/components/pahar/before-after-slider'
+import { CaseTimeline } from '@/components/pahar/case-timeline'
 import {
   CaseStatusBadge,
   AccessStateBadge,
@@ -31,16 +32,24 @@ interface Props {
   lang: Lang
   role: Role
   reload: () => void
+  initialSelectedId?: string | null
+  onSelectedChange?: (id: string | null) => void
 }
 
 const STATUS_FILTERS = ['all', 'active', 'candidate', 'under_review', 'field_verification', 'reviewed', 'rejected', 'field_corroborated'] as const
 type StatusFilter = (typeof STATUS_FILTERS)[number]
 
-export function CasesView({ data, lang, role, reload }: Props) {
+export function CasesView({ data, lang, role, reload, initialSelectedId, onSelectedChange }: Props) {
   const t = dict[lang]
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
   const [filter, setFilter] = useState<StatusFilter>('active')
   const [search, setSearch] = useState('')
+
+  // Notify parent when selection changes (for URL hash sync)
+  const handleSelect = useCallback((id: string | null) => {
+    setSelectedId(id)
+    onSelectedChange?.(id)
+  }, [onSelectedChange])
 
   const selected = data.cases.find((c) => c.id === selectedId) ?? null
 
@@ -61,7 +70,7 @@ export function CasesView({ data, lang, role, reload }: Props) {
   })
 
   if (selected) {
-    return <CaseDetail c={selected} lang={lang} role={role} onBack={() => setSelectedId(null)} reload={reload} sources={data.sources} />
+    return <CaseDetail c={selected} lang={lang} role={role} onBack={() => handleSelect(null)} reload={reload} sources={data.sources} />
   }
 
   return (
@@ -136,7 +145,7 @@ export function CasesView({ data, lang, role, reload }: Props) {
               filteredCases.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => setSelectedId(c.id)}
+                  onClick={() => handleSelect(c.id)}
                   className="w-full text-left p-2.5 rounded-lg border border-border bg-card hover:bg-muted/50 hover:border-primary/50 transition-colors group"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -288,6 +297,15 @@ function CaseDetail({
     window.open(`/api/reports/${reportId}?format=html&lang=${lang}`, '_blank')
   }
 
+  const onCopyLink = () => {
+    const url = `${window.location.origin}/#tab=cases&case=${c.id}`
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success(lang === 'en' ? 'Link copied to clipboard' : 'লিংক ক্লিপবোর্ডে কপি হয়েছে')
+    }).catch(() => {
+      toast.error(lang === 'en' ? 'Failed to copy link' : 'লিংক কপি ব্যর্থ')
+    })
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
@@ -302,6 +320,16 @@ function CaseDetail({
             <Badge variant="outline" className="text-[10px]">
               {lang === 'en' ? 'Revision' : 'রিভিশন'} {c.revision}
             </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCopyLink}
+              className="h-7 px-2 gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+              title={lang === 'en' ? 'Copy link' : 'লিংক কপি'}
+            >
+              <Link2 className="h-3 w-3" />
+              <span className="hidden sm:inline">{lang === 'en' ? 'Copy link' : 'লিংক'}</span>
+            </Button>
           </div>
           <div className="text-xs text-muted-foreground mt-1" lang={lang}>
             {lang === 'en' ? c.siteNameEn : c.siteNameBn} • {t.case.detectedAt}: {fmtDate(c.detectedAt, lang)}
@@ -425,7 +453,20 @@ function CaseDetail({
             </CardContent>
           </Card>
 
-          {/* Revision history */}
+          {/* Case lifecycle timeline (horizontal) + event log */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2" lang={lang}>
+                <History className="h-4 w-4 text-primary" />
+                {lang === 'en' ? 'Case lifecycle' : 'কেস জীবনচক্র'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CaseTimeline c={c} lang={lang} />
+            </CardContent>
+          </Card>
+
+          {/* Full revision history (append-only audit trail) */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2" lang={lang}>

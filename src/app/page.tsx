@@ -52,7 +52,16 @@ export default function Home() {
     const saved = window.localStorage.getItem('pp-lang') as Lang | null
     return saved === 'bn' || saved === 'en' ? saved : 'en'
   })
-  const [tab, setTab] = useState<Tab>('dashboard')
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === 'undefined') return 'dashboard'
+    const h = window.location.hash.slice(1)
+    const params = new URLSearchParams(h)
+    const tb = params.get('tab')
+    if (tb && ['dashboard', 'sites', 'cases', 'reports', 'sources', 'jobs', 'preparedness', 'notifications', 'audit', 'compare'].includes(tb)) {
+      return tb as Tab
+    }
+    return 'dashboard'
+  })
   const [navOpen, setNavOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [selectedSiteSlug, setSelectedSiteSlug] = useState<string | null>(null)
@@ -64,6 +73,33 @@ export default function Home() {
     localStorage.setItem('pp-lang', lang)
     document.documentElement.lang = lang
   }, [lang])
+
+  // Sync tab + selection to URL hash (bookmarkable views)
+  useEffect(() => {
+    const params = new URLSearchParams()
+    params.set('tab', tab)
+    if (selectedSiteSlug) params.set('site', selectedSiteSlug)
+    if (selectedCaseId) params.set('case', selectedCaseId)
+    const newHash = params.toString()
+    if (window.location.hash.slice(1) !== newHash) {
+      window.history.replaceState(null, '', `#${newHash}`)
+    }
+  }, [tab, selectedSiteSlug, selectedCaseId])
+
+  // Listen for browser back/forward
+  useEffect(() => {
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.hash.slice(1))
+      const tb = params.get('tab')
+      if (tb && ['dashboard', 'sites', 'cases', 'reports', 'sources', 'jobs', 'preparedness', 'notifications', 'audit', 'compare'].includes(tb)) {
+        setTab(tb as Tab)
+      }
+      setSelectedSiteSlug(params.get('site'))
+      setSelectedCaseId(params.get('case'))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   // Cmd/Ctrl+K command palette
   useEffect(() => {
@@ -109,8 +145,20 @@ export default function Home() {
       const role = (session?.user as { role?: Role } | undefined)?.role
       if (role) {
         const allowed = ROLE_TABS[role] ?? ['dashboard']
-        if (allowed.includes(tb as Tab)) setTab(tb as Tab)
+        if (allowed.includes(tb as Tab)) {
+          setTab(tb as Tab)
+          return true
+        }
+        // Blocked — show toast for role-restricted tabs
+        if (tb === 'audit') {
+          toast.error(lang === 'en' ? 'Audit Log requires admin role' : 'অডিট লগের জন্য অ্যাডমিন ভূমিকা প্রয়োজন')
+        } else if (tb === 'preparedness') {
+          toast.error(lang === 'en' ? 'Preparedness tab not available for your role' : 'আপনার ভূমিকার জন্য প্রস্তুতি ট্যাব অনুপলব্ধ')
+        } else if (tb === 'compare') {
+          toast.error(lang === 'en' ? 'Compare tab not available for your role' : 'আপনার ভূমিকার জন্য তুলনা ট্যাব অনুপলব্ধ')
+        }
       }
+      return false
     },
     onToggleLang: () => setLang((l) => (l === 'en' ? 'bn' : 'en')),
     onToggleTheme: () => setTheme(theme === 'dark' ? 'light' : 'dark'),
@@ -272,7 +320,7 @@ export default function Home() {
 
       {/* Main content */}
       <main className="flex-1 mx-auto w-full max-w-[1400px] px-4 py-6">
-        <DashboardRouter tab={effectiveTab} lang={lang} role={role} setTab={setTab} />
+        <DashboardRouter tab={effectiveTab} lang={lang} role={role} setTab={setTab} initialSiteSlug={selectedSiteSlug} initialCaseId={selectedCaseId} onCaseSelected={setSelectedCaseId} />
       </main>
 
       {/* Footer */}
@@ -321,11 +369,17 @@ function DashboardRouter({
   lang,
   role,
   setTab,
+  initialSiteSlug,
+  initialCaseId,
+  onCaseSelected,
 }: {
   tab: Tab
   lang: Lang
   role: Role
   setTab: (t: Tab) => void
+  initialSiteSlug: string | null
+  initialCaseId: string | null
+  onCaseSelected: (id: string | null) => void
 }) {
   const t = dict[lang]
   const qc = useQueryClient()
@@ -370,9 +424,9 @@ function DashboardRouter({
     case 'dashboard':
       return <DashboardView data={data} lang={lang} role={role} setTab={setTab as (t: string) => void} />
     case 'sites':
-      return <SitesView data={data} lang={lang} />
+      return <SitesView data={data} lang={lang} initialSlug={initialSiteSlug} />
     case 'cases':
-      return <CasesView data={data} lang={lang} role={role} reload={reload} />
+      return <CasesView data={data} lang={lang} role={role} reload={reload} initialSelectedId={initialCaseId} onSelectedChange={onCaseSelected} />
     case 'reports':
       return <ReportsView data={data} lang={lang} />
     case 'sources':

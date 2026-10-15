@@ -286,3 +286,77 @@ QA via agent-browser (1440×900 + 375×812) + VLM confirmed: server healthy (HTT
 8. **Internationalization audit**: Some date strings still render in en-GB even in BN mode (audit log timestamps, some chart axes).
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 4 — webDevReview (cron job 461689, 2026-10-16 00:10 BST)
+
+### Current project status description / assessment
+Rounds 1-3 established a fully functional prototype with case review workflow, bilingual reports, command palette, audit log, expandable sources, case comparison, keyboard shortcuts, and report version diff. Server healthy (HTTP 200, no console errors). This round focused on (a) fixing the 4 minor items from Round 3 and (b) adding 3 new features: case lifecycle timeline, bookmarkable URL hash, and site comparison mode.
+
+### Completed modifications / verification results
+
+**Fix 1: Keyboard shortcut `g a` for non-admins**
+- Updated `useKeyboardShortcuts` hook's `onNavigate` callback to return boolean (true = success, false = blocked).
+- Updated Home component to show role-specific toast messages when navigation is blocked:
+  - `g a` (audit) → "Audit Log requires admin role" / "অডিট লগের জন্য অ্যাডমিন ভূমিকা প্রয়োজন"
+  - `g p` (preparedness) → "Preparedness tab not available for your role"
+  - `g c` (compare) → "Compare tab not available for your role"
+- Verified: pressing `g a` as reviewer shows the toast "Audit Log requires admin role".
+
+**New feature: Case lifecycle timeline**
+- New `CaseTimeline` component (`/src/components/pahar/case-timeline.tsx`).
+- Renders the case lifecycle as a horizontal timeline with 5 stages: Candidate → Under review → Field verification → Field corroborated → Reviewed. Each stage has a colored node (slate/amber/violet/teal/emerald) that shows visited/current/unvisited states. Current stage has a pulsing ring + scale-110. Connectors between stages use primary color for completed transitions.
+- Below the timeline: an event log with colored dots per status, actor name, timestamp (absolute + relative), and note text. Scrollable (max-h-200px).
+- Rejected cases show an additional red node after the last stage.
+- Integrated into `CaseDetail` view as a new "Case lifecycle" card above the existing "Revision history" card (which is retained as the full append-only audit trail).
+- Verified: NAGIN case shows 5-stage timeline with "Reviewed" highlighted in green + event log with 3 entries (opened, status_changed ×2, field_corroborated, reviewed).
+
+**New feature: Bookmarkable URL hash**
+- Home component now reads the URL hash on mount (`#tab=cases&case=...`) to restore the active tab + selected case/site.
+- Tab + selectedSiteSlug + selectedCaseId are synced to the URL hash via `replaceState` on every change (no extra history entries).
+- Browser back/forward (popstate) is handled — updates tab + selection from the hash.
+- `CasesView` now accepts `onSelectedChange` callback, wired through `DashboardRouter` to Home's `selectedCaseId` state. When a user clicks a case, the hash updates to `#tab=cases&case=<id>`, making the view shareable/bookmarkable.
+- `SitesView` accepts `initialSlug` to deep-link to a site detail.
+- Added "Copy link" button (Link2 icon) in the CaseDetail header that copies the full URL with hash to clipboard. Shows toast "Link copied to clipboard" / "লিংক ক্লিপবোর্ডে কপি হয়েছে".
+- Verified: clicking NAGIN case updates URL to `#tab=cases&case=cmv9pt26s0018q44gyiwvmher`. Copy link button works.
+
+**New feature: Site comparison mode**
+- Extended `CompareView` with a mode toggle (Cases / Sites) at the top. Switching modes clears the selection.
+- New `SitesCompare` + `SitesComparisonGrid` functions:
+  - Site picker with checkboxes showing name, district, area, elevation, active-case count badge.
+  - Comparison table with rows: Rainfall 24h (with progress bar, red if >100mm YPSA threshold, yellow if incomplete), Rainfall 72h (progress bar), Active cases (active/total), Area (ha), Elevation (m), Max slope (°), Jurisdiction (colored badge).
+  - "Key differences" card showing highest/lowest values per metric (Rainfall 24h, Rainfall 72h, Area, Active cases) across selected sites.
+- Both modes (Cases + Sites) share the same MAX_COMPARE=4 limit and badge counter.
+- Verified: selecting Chashma + Nagin sites shows rainfall comparison table with progress bars + key differences card with highest/lowest values.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ `g a` as reviewer shows "Audit Log requires admin role" toast.
+  - ✓ Case lifecycle timeline renders with 5 stages + current stage highlighted + event log.
+  - ✓ URL hash updates on case selection: `#tab=cases&case=<id>`.
+  - ✓ Copy link button copies URL to clipboard with toast confirmation.
+  - ✓ Compare view has Cases/Sites mode toggle.
+  - ✓ Sites comparison shows rainfall table with progress bars + key differences card.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Compare mode toggle on mobile**: The Cases/Sites toggle + badge + clear button can be tight on mobile. Consider stacking the header on small screens.
+2. **Timeline horizontal scroll on mobile**: The 5-stage timeline requires horizontal scroll on narrow screens. Could make stages stack vertically on mobile.
+3. **URL hash not updating for site selection**: SitesView manages its own `selectedSlug` state but doesn't call back to Home to update `selectedSiteSlug` in the hash. Same pattern as CasesView needed.
+4. **Report diff drawer truncation**: Object values still truncated to 60 chars. Could add a "show full" expand.
+
+**Recommended next-phase work:**
+1. **Bulk case actions**: Multi-select cases in the Cases list → bulk approve/reject with confirmation dialog.
+2. **WebSocket live updates**: Replace 60s polling with a socket.io mini-service for real-time BMD alerts / job completions.
+3. **Source adapter health sparklines**: Track access-state changes over time and show a mini sparkline per adapter.
+4. **Print stylesheet extraction**: Move inline printable-report CSS to a shared stylesheet.
+5. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+6. **Dashboard data export**: Add a "Download JSON" button to export the current dashboard data for offline analysis.
+7. **Case search by date range**: Add a date picker to the Cases view to filter by detectedAt range.
+8. **Notifications settings**: Let users choose which notification categories they receive (case, bmd, source, job, report).
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

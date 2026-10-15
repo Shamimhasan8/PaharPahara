@@ -27,12 +27,13 @@ import {
 interface Props {
   data: DashboardDataDTO
   lang: Lang
+  initialSlug?: string | null
 }
 
-export function SitesView({ data, lang }: Props) {
+export function SitesView({ data, lang, initialSlug }: Props) {
   const t = dict[lang]
   const { sites, cases, bulletins } = data
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug ?? null)
   const selected = sites.find((s) => s.slug === selectedSlug) ?? null
 
   if (selected) {

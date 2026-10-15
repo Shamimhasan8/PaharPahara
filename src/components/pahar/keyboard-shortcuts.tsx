@@ -100,7 +100,7 @@ export function useKeyboardShortcuts({
   onOpenCommandPalette,
   enabled,
 }: {
-  onNavigate: (tab: string) => void
+  onNavigate: (tab: string) => boolean  // returns true if navigation succeeded
   onToggleLang: () => void
   onToggleTheme: () => void
   onOpenHelp: () => void
