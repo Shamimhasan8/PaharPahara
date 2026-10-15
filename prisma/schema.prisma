@@ -69,6 +69,18 @@ model SourceRegistry {
   updatedAt     DateTime @updatedAt
 
   rawAssets     RawAsset[]
+  healthHistory SourceHealthHistory[]
+}
+
+// Tracks access-state changes over time for sparkline rendering.
+model SourceHealthHistory {
+  id          String   @id @default(cuid())
+  sourceId    String
+  source      SourceRegistry @relation(fields: [sourceId], references: [id])
+  accessState String   // live | stale | historical_replay | unavailable
+  checkedAt   DateTime
+  note        String?
+  createdAt   DateTime @default(now())
 }
 
 model RawAsset {

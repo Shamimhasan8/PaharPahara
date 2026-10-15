@@ -92,8 +92,8 @@ export function ActivityFeed({ lang, height = 360 }: Props) {
   const categories = ['all', 'case', 'job', 'bmd', 'auth', 'report']
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2 shrink-0">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div className="h-7 w-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">

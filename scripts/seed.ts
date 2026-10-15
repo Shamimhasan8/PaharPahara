@@ -1005,6 +1005,30 @@ async function main() {
     },
   })
 
+  // ---------- Source health history (14 days) ----------
+  // Seed a 14-day access-state history per source for real sparkline rendering.
+  const now = Date.now()
+  for (const s of sources) {
+    const currentScore = s.accessState === 'live' ? 4 : s.accessState === 'historical_replay' ? 3 : s.accessState === 'stale' ? 2 : 0
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date(now - i * 24 * 60 * 60 * 1000)
+      // Deterministic variation per adapter + day
+      const seed = (s.adapter.charCodeAt(0) + i * 7) % 5
+      const variation = i > 0 ? (seed - 2) * 0.5 : 0
+      const adjScore = Math.max(0, Math.min(4, Math.round(currentScore + variation)))
+      const state = adjScore >= 4 ? 'live' : adjScore >= 3 ? 'historical_replay' : adjScore >= 2 ? 'stale' : 'unavailable'
+      await db.sourceHealthHistory.create({
+        data: {
+          sourceId: s.id,
+          accessState: state,
+          checkedAt: date,
+          note: i === 0 ? 'current' : null,
+        },
+      })
+    }
+  }
+  console.log('Seeded source health history (14 days × 9 sources = 126 entries)')
+
   console.log('\n✅ Seed complete. Demo accounts:')
   console.log('   admin@paharpahara.bd / admin123')
   console.log('   reviewer@paharpahara.bd / reviewer123')

@@ -1,7 +1,6 @@
 // PaharPahara — source health history endpoint.
-// Returns synthesized access-state history per source adapter.
-// For the prototype, we synthesize a 14-day history based on the current state.
-// In production, this would be backed by a SourceHealthHistory table.
+// Returns real access-state history per source adapter from the SourceHealthHistory table.
+// Falls back to synthesized data if no history records exist.
 
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
@@ -23,19 +22,44 @@ export async function GET() {
 
   const sources = await db.sourceRegistry.findMany({ orderBy: { adapter: 'asc' } })
 
-  // Synthesize 14-day history per source.
-  // Real history would come from a SourceHealthHistory table; for the prototype
-  // we generate a plausible trend ending at the current state.
-  const now = Date.now()
-  const days = 14
+  // Try to fetch real history from SourceHealthHistory table
+  const realHistory = await db.sourceHealthHistory.findMany({
+    where: { sourceId: { in: sources.map((s) => s.id) } },
+    orderBy: { checkedAt: 'asc' },
+  })
+
+  // Group by sourceId
+  const historyBySource = new Map<string, typeof realHistory>()
+  for (const h of realHistory) {
+    if (!historyBySource.has(h.sourceId)) historyBySource.set(h.sourceId, [])
+    historyBySource.get(h.sourceId)!.push(h)
+  }
+
   const history = sources.map((s) => {
+    const realPoints = historyBySource.get(s.id) ?? []
+
+    if (realPoints.length > 0) {
+      // Use real history
+      return {
+        adapter: s.adapter,
+        currentAccessState: s.accessState,
+        lastCheckedAt: s.lastCheckedAt?.toISOString() ?? null,
+        points: realPoints.map((p) => ({
+          date: p.checkedAt.toISOString().slice(0, 10),
+          score: STATE_SCORE[p.accessState] ?? 0,
+          state: p.accessState,
+        })),
+      }
+    }
+
+    // Fallback: synthesize 14-day history (deterministic)
+    const now = Date.now()
+    const days = 14
     const currentScore = STATE_SCORE[s.accessState] ?? 0
-    // Generate a plausible backwards trend: small random walk ending at currentScore
     const points: Array<{ date: string; score: number; state: string }> = []
     let score = currentScore
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(now - i * 24 * 60 * 60 * 1000)
-      // Add some variation for past days (deterministic based on adapter + day)
       const seed = (s.adapter.charCodeAt(0) + i * 7) % 5
       const variation = i > 0 ? (seed - 2) * 0.5 : 0
       const adjScore = Math.max(0, Math.min(4, Math.round(score + variation)))
@@ -48,11 +72,12 @@ export async function GET() {
       })
       score = adjScore
     }
-    // Ensure the last point matches the current state exactly
-    points[points.length - 1] = {
-      date: points[points.length - 1].date,
-      score: currentScore,
-      state: s.accessState,
+    if (points.length > 0) {
+      points[points.length - 1] = {
+        date: points[points.length - 1].date,
+        score: currentScore,
+        state: s.accessState,
+      }
     }
     return {
       adapter: s.adapter,

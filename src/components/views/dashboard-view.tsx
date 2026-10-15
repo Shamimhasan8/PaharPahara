@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Mountain, CloudRain, AlertTriangle, FileText, Activity, MapPin, TrendingUp, ShieldCheck, Download, Upload } from 'lucide-react'
@@ -28,6 +29,7 @@ interface Props {
 export function DashboardView({ data, lang, role, setTab }: Props) {
   const t = dict[lang]
   const { sites, cases, bulletins, sources, jobs, notifications, rainfallSummary } = data
+  const [importPreview, setImportPreview] = useState<{ data: Record<string, unknown>; filename: string } | null>(null)
 
   // Active alerts (messageType === 'alert')
   const activeAlerts = bulletins.filter((b) => b.messageType === 'alert')
@@ -92,14 +94,10 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
                 reader.onload = (ev) => {
                   try {
                     const json = ev.target?.result as string
-                    // Validate it's valid JSON by parsing
-                    JSON.parse(json)
-                    // Store in localStorage for the dashboard to read
-                    localStorage.setItem('pp-imported-dashboard', json)
-                    localStorage.setItem('pp-imported-dashboard-time', new Date().toISOString())
-                    window.location.reload()
+                    const parsed = JSON.parse(json)
+                    // Show preview dialog instead of immediate reload
+                    setImportPreview({ data: parsed, filename: file.name })
                   } catch {
-                    // Invalid JSON — show error via alert (simple for prototype)
                     alert(lang === 'en' ? 'Invalid JSON file' : 'অবৈধ JSON ফাইল')
                   }
                 }
@@ -332,9 +330,107 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
       </div>
 
       {/* Activity feed + source health sparklines */}
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid lg:grid-cols-2 gap-4 items-stretch">
         <ActivityFeed lang={lang} height={320} />
         <SourceHealthSparklines lang={lang} />
+      </div>
+
+      {/* Import preview dialog */}
+      {importPreview && (
+        <ImportPreviewDialog
+          data={importPreview.data}
+          filename={importPreview.filename}
+          lang={lang}
+          onClose={() => setImportPreview(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Import preview dialog — shows summary of imported JSON before applying.
+function ImportPreviewDialog({
+  data,
+  filename,
+  lang,
+  onClose,
+}: {
+  data: Record<string, unknown>
+  filename: string
+  lang: Lang
+  onClose: () => void
+}) {
+  const sitesCount = Array.isArray(data.sites) ? data.sites.length : 0
+  const casesCount = Array.isArray(data.cases) ? data.cases.length : 0
+  const sourcesCount = Array.isArray(data.sources) ? data.sources.length : 0
+  const jobsCount = Array.isArray(data.jobs) ? data.jobs.length : 0
+  const notificationsCount = Array.isArray(data.notifications) ? data.notifications.length : 0
+  const bulletinsCount = Array.isArray(data.bulletins) ? data.bulletins.length : 0
+
+  const summary = [
+    { label: 'Sites', labelBn: 'সাইট', count: sitesCount, icon: MapPin },
+    { label: 'Cases', labelBn: 'কেস', count: casesCount, icon: FileText },
+    { label: 'Sources', labelBn: 'উৎস', count: sourcesCount, icon: Activity },
+    { label: 'Jobs', labelBn: 'জব', count: jobsCount, icon: TrendingUp },
+    { label: 'Notifications', labelBn: 'বিজ্ঞপ্তি', count: notificationsCount, icon: Activity },
+    { label: 'BMD bulletins', labelBn: 'BMD বুলেটিন', count: bulletinsCount, icon: CloudRain },
+  ]
+
+  const onApply = () => {
+    localStorage.setItem('pp-imported-dashboard', JSON.stringify(data))
+    localStorage.setItem('pp-imported-dashboard-time', new Date().toISOString())
+    window.location.reload()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Upload className="h-4 w-4 text-primary" />
+            <div>
+              <div className="text-sm font-semibold" lang={lang}>{lang === 'en' ? 'Import preview' : 'ইম্পোর্ট প্রিভিউ'}</div>
+              <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[250px]">{filename}</div>
+            </div>
+          </div>
+          <Button size="sm" variant="ghost" onClick={onClose} className="h-8 w-8 p-0">×</Button>
+        </div>
+        <div className="flex-1 overflow-y-auto scroll-thin p-4 space-y-3">
+          <div className="text-xs text-muted-foreground" lang={lang}>
+            {lang === 'en' ? 'This file contains the following data:' : 'এই ফাইলে নিম্নলিখিত ডেটা রয়েছে:'}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {summary.map((s) => {
+              const Icon = s.icon
+              return (
+                <div key={s.label} className="border border-border rounded-lg p-2.5 bg-card">
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wide">
+                    <Icon className="h-3 w-3" />
+                    <span lang={lang}>{lang === 'en' ? s.label : s.labelBn}</span>
+                  </div>
+                  <div className="text-lg font-bold tabular-nums mt-0.5">{s.count}</div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="text-[10px] text-muted-foreground/70" lang={lang}>
+            {lang === 'en'
+              ? 'Importing will store this data in your browser and reload the page. The dashboard will use the imported data instead of fetching from the server.'
+              : 'ইম্পোর্ট করলে এই ডেটা আপনার ব্রাউজারে সংরক্ষিত হবে এবং পৃষ্ঠা রিলোড হবে। ড্যাশবোর্ড সার্ভার থেকে না এনে ইম্পোর্ট করা ডেটা ব্যবহার করবে।'}
+          </div>
+        </div>
+        <div className="p-3 border-t border-border flex items-center justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={onClose} className="h-8">
+            {lang === 'en' ? 'Cancel' : 'বাতিল'}
+          </Button>
+          <Button size="sm" onClick={onApply} className="h-8 gap-1.5">
+            <Upload className="h-3.5 w-3.5" />
+            {lang === 'en' ? 'Apply & reload' : 'প্রয়োগ ও রিলোড'}
+          </Button>
+        </div>
       </div>
     </div>
   )

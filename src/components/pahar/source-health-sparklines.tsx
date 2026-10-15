@@ -52,8 +52,8 @@ export function SourceHealthSparklines({ lang }: Props) {
   const history = data?.history ?? []
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2 shrink-0">
         <CardTitle className="text-base flex items-center gap-2" lang={lang}>
           <TrendingUp className="h-4 w-4 text-primary" />
           {lang === 'en' ? 'Source health trends (14 days)' : 'উৎস স্বাস্থ্য ট্রেন্ড (১৪ দিন)'}
@@ -64,7 +64,7 @@ export function SourceHealthSparklines({ lang }: Props) {
             : 'প্রতি অ্যাডাপ্টারে মিনি ট্রেন্ড। সবুজ = লাইভ, নীল = রিপ্লে, অ্যাম্বার = পুরোনো, লাল = অনুপলব্ধ।'}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-y-auto scroll-thin">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />

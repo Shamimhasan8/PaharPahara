@@ -572,3 +572,70 @@ Rounds 1-6 established a fully functional prototype with comprehensive features:
 8. **Dashboard data diff**: When importing a JSON, show a diff against the current dashboard state (what changed).
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 8 — webDevReview (cron job 461689, 2026-10-16 01:30 BST)
+
+### Current project status description / assessment
+Rounds 1-7 established a fully functional prototype with comprehensive features. Server healthy (HTTP 200, no console errors). This round focused on (a) fixing panel height inconsistency, (b) adding SourceHealthHistory Prisma model with real data, and (c) adding import data preview dialog.
+
+### Completed modifications / verification results
+
+**Fix 1: Dashboard panel height consistency**
+- Added `items-stretch` to the grid container for Activity Feed + Source Health Trends panels.
+- Updated both `ActivityFeed` and `SourceHealthSparklines` Card components to use `h-full flex flex-col` so they stretch to fill their grid cell.
+- CardHeader uses `shrink-0`, CardContent uses `flex-1 overflow-y-auto scroll-thin` so the content area fills available space.
+- Verified: both panels now render at the same height.
+
+**New feature: SourceHealthHistory Prisma model + real data**
+- Added `SourceHealthHistory` model to `prisma/schema.prisma`: tracks `sourceId`, `accessState`, `checkedAt`, `note` per access-state change.
+- Added `healthHistory SourceHealthHistory[]` relation to `SourceRegistry`.
+- Ran `bun run db:push` to create the new table.
+- Updated seed script to populate 14 days × 9 sources = 126 SourceHealthHistory entries with deterministic access-state variation per adapter + day, ending at the current state.
+- Updated `/api/sources/health-history` endpoint:
+  - Fetches real history from `SourceHealthHistory` table.
+  - Falls back to synthesized data only if no history records exist.
+  - Maps access states to numeric scores (0-4) for sparkline rendering.
+- Reset DB and re-seeded with the new SourceHealthHistory data.
+- Restarted dev server to pick up the new Prisma client.
+- Verified: sparklines now render with real data (colored trend lines per adapter).
+
+**New feature: Import data preview dialog**
+- Updated the Import button handler in `DashboardView` to show a preview dialog instead of immediately reloading.
+- New `ImportPreviewDialog` component:
+  - Shows the imported filename.
+  - Displays 6 summary cards: Sites, Cases, Sources, Jobs, Notifications, BMD bulletins (with counts).
+  - Each card has an icon + label + count.
+  - "Cancel" button closes without applying.
+  - "Apply & reload" button stores the JSON in localStorage and reloads the page.
+  - Includes a disclaimer explaining what happens on import.
+- Verified: Import button visible; selecting a JSON file shows the preview dialog with counts.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Activity Feed + Source Health Trends panels are the same height.
+  - ✓ Sparklines render with real data (colored trend lines per adapter).
+  - ✓ Import button visible next to Export.
+  - ✓ No console errors.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Import doesn't actually swap dashboard data yet**: The import stores JSON in localStorage but the query layer still fetches from the API. A future iteration would have the query layer check localStorage first.
+2. **Sparkline tooltip overflow**: On the leftmost sparklines, the tooltip might overflow the card edge. Could add boundary detection.
+3. **SourceHealthHistory not auto-logged**: Currently only seed data exists. A production version would log new entries when access state flips.
+
+**Recommended next-phase work:**
+1. **WebSocket live updates**: Replace 30s/60s polling with a socket.io mini-service.
+2. **Print stylesheet extraction**: Move inline printable-report CSS to a shared stylesheet.
+3. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+4. **Case timeline mobile stacking**: The 5-stage horizontal timeline could stack vertically on mobile.
+5. **Dashboard query layer localStorage fallback**: When imported data exists in localStorage, use it instead of fetching from the API.
+6. **Auto-log SourceHealthHistory**: Add a check in the source health endpoint that creates a new history entry when the current access state differs from the last logged state.
+7. **Activity feed real-time WebSocket push**: When a new audit log is written, push it to all connected clients.
+8. **Dashboard data diff on import**: When importing a JSON, show a diff against the current dashboard state.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
