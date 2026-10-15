@@ -109,7 +109,11 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           icon={<Mountain className="h-4 w-4" />}
           label={t.dashboard.siteStatus}
           value={`${sites.length}`}
-          sub={`${sites.filter((s) => s.jurisdiction === 'verified_doe').length} ${lang === 'en' ? 'DoE' : 'DoE'} • ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} ${lang === 'en' ? 'Forest' : 'Forest'} • ${sites.filter((s) => s.jurisdiction === 'unverified').length} ${t.site.unverified}`}
+          sub={
+            lang === 'en'
+              ? `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} DoE · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} Forest · ${sites.filter((s) => s.jurisdiction === 'unverified').length} unverified`
+              : `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} DoE · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} ফরেস্ট · ${sites.filter((s) => s.jurisdiction === 'unverified').length} অযাচাইকৃত`
+          }
           color="emerald"
         />
         <StatCard
@@ -124,7 +128,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           icon={<CloudRain className="h-4 w-4" />}
           label={t.dashboard.rainfall24h}
           value={`${maxRain24h.toFixed(1)} mm`}
-          sub={anyIncomplete ? t.dashboard.incompleteData : t.dashboard.asOf + ' ' + fmtDateOnly(sites[0] ? rainfallSummary[sites[0].id]?.asOf : null, lang)}
+          sub={anyIncomplete ? t.dashboard.incompleteData : (lang === 'en' ? 'As of' : 'হিসাবকাল') + ' ' + fmtDateOnly(sites[0] ? rainfallSummary[sites[0].id]?.asOf : null, lang)}
           color={anyIncomplete ? 'amber' : 'sky'}
           onClick={() => setTab('preparedness')}
         />
@@ -132,7 +136,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           icon={<Activity className="h-4 w-4" />}
           label={t.dashboard.sourceHealth}
           value={`${liveSources}/${sources.length}`}
-          sub={`${replaySources} ${t.status.historicalReplay} • ${unavailableSources} ${t.status.unavailable}`}
+          sub={lang === 'en' ? `${replaySources} replay · ${unavailableSources} unavailable` : `${replaySources} রিপ্লে · ${unavailableSources} অনুপলব্ধ`}
           color={unavailableSources > 0 ? 'amber' : 'emerald'}
           onClick={() => setTab('sources')}
         />
@@ -153,7 +157,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             </div>
           </CardHeader>
           <CardContent>
-            <ChattogramMap sites={sites} bulletins={bulletins} lang={lang} height={380} />
+            <ChattogramMap sites={sites} bulletins={bulletins} cases={cases} lang={lang} height={380} />
           </CardContent>
         </Card>
 
@@ -202,10 +206,13 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-1.5 max-h-[260px] overflow-y-auto scroll-thin">
+          <CardContent className="space-y-1 max-h-[260px] overflow-y-auto scroll-thin">
             {sources.map((s) => (
-              <div key={s.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border/50 last:border-0">
-                <div className="font-mono text-[11px] text-foreground truncate">{s.adapter}</div>
+              <div key={s.id} className="flex items-center justify-between text-xs py-2 border-b border-border/40 last:border-0 gap-2">
+                <div className="font-mono text-[11px] text-foreground truncate flex items-center gap-2 min-w-0">
+                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.accessState === 'live' ? 'bg-emerald-500 animate-pulse' : s.accessState === 'historical_replay' ? 'bg-sky-400' : s.accessState === 'unavailable' ? 'bg-rose-400' : 'bg-amber-400'}`} />
+                  <span className="truncate">{s.adapter}</span>
+                </div>
                 <AccessStateBadge state={s.accessState} lang={lang} />
               </div>
             ))}
@@ -233,14 +240,17 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-1.5 max-h-[260px] overflow-y-auto scroll-thin">
+          <CardContent className="space-y-1 max-h-[260px] overflow-y-auto scroll-thin">
             {jobs.slice(0, 6).map((j) => (
-              <div key={j.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border/50 last:border-0">
+              <div key={j.id} className="flex items-center justify-between text-xs py-2 border-b border-border/40 last:border-0 gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="font-mono text-[10px] text-foreground truncate">{j.jobKey}</div>
-                  <div className="text-[9px] text-muted-foreground">{j.jobType} • {relativeTime(j.updatedAt, lang)}</div>
+                  <div className="text-[9px] text-muted-foreground truncate">{j.jobType} · {relativeTime(j.updatedAt, lang)}</div>
                 </div>
-                <JobStateMini state={j.state} />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <JobStateMini state={j.state} />
+                  <span className="text-[9px] text-muted-foreground capitalize hidden sm:inline">{j.state}</span>
+                </div>
               </div>
             ))}
           </CardContent>
@@ -271,18 +281,24 @@ function StatCard({
     sky: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-900',
     rose: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-900',
   }
+  const iconWrap = {
+    emerald: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300',
+    amber: 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300',
+    sky: 'bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300',
+    rose: 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300',
+  }
   return (
     <Card
-      className={`${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${colors[color]}`}
+      className={`${onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all' : ''} ${colors[color]}`}
       onClick={onClick}
     >
       <CardContent className="p-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-medium uppercase tracking-wide opacity-80">{label}</span>
-          {icon}
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{label}</span>
+          <span className={`h-6 w-6 rounded-md flex items-center justify-center ${iconWrap[color]}`}>{icon}</span>
         </div>
-        <div className="text-xl font-bold mt-1 leading-tight">{value}</div>
-        <div className="text-[10px] opacity-70 mt-0.5 truncate">{sub}</div>
+        <div className="text-2xl font-bold leading-none tabular-nums">{value}</div>
+        <div className="text-[10px] opacity-70 mt-1.5 truncate leading-tight">{sub}</div>
       </CardContent>
     </Card>
   )

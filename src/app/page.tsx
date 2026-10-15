@@ -4,11 +4,12 @@
 // Single-route SPA: login screen + tabbed dashboard.
 // Uses NextAuth credentials provider + TanStack Query for server state.
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
-import { Mountain, LogOut, Globe, Bell, Loader2, Menu, X, ShieldAlert } from 'lucide-react'
+import { Mountain, LogOut, Globe, Bell, Loader2, Menu, X, ShieldAlert, Search, Command } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,11 +27,15 @@ import { SourcesView } from '@/components/views/sources-view'
 import { JobsView } from '@/components/views/jobs-view'
 import { PreparednessView } from '@/components/views/preparedness-view'
 import { NotificationsView } from '@/components/views/notifications-view'
+import { AuditLogView } from '@/components/views/audit-log-view'
+import { DhakaClock } from '@/components/pahar/dhaka-clock'
+import { ThemeToggle } from '@/components/pahar/theme-toggle'
+import { CommandPalette } from '@/components/pahar/command-palette'
 
-type Tab = 'dashboard' | 'sites' | 'cases' | 'reports' | 'sources' | 'jobs' | 'preparedness' | 'notifications'
+type Tab = 'dashboard' | 'sites' | 'cases' | 'reports' | 'sources' | 'jobs' | 'preparedness' | 'notifications' | 'audit'
 
 const ROLE_TABS: Record<Role, Tab[]> = {
-  admin: ['dashboard', 'sites', 'cases', 'reports', 'sources', 'jobs', 'preparedness', 'notifications'],
+  admin: ['dashboard', 'sites', 'cases', 'reports', 'sources', 'jobs', 'preparedness', 'notifications', 'audit'],
   doe_reviewer: ['dashboard', 'sites', 'cases', 'reports', 'sources', 'jobs', 'notifications'],
   forest_officer: ['dashboard', 'sites', 'cases', 'reports', 'sources', 'notifications'],
   preparedness: ['dashboard', 'sites', 'preparedness', 'reports', 'sources', 'notifications'],
@@ -39,6 +44,7 @@ const ROLE_TABS: Record<Role, Tab[]> = {
 
 export default function Home() {
   const { data: session, status } = useSession()
+  const { theme, setTheme } = useTheme()
   const [lang, setLang] = useState<Lang>(() => {
     if (typeof window === 'undefined') return 'en'
     const saved = window.localStorage.getItem('pp-lang') as Lang | null
@@ -46,6 +52,9 @@ export default function Home() {
   })
   const [tab, setTab] = useState<Tab>('dashboard')
   const [navOpen, setNavOpen] = useState(false)
+  const [cmdOpen, setCmdOpen] = useState(false)
+  const [selectedSiteSlug, setSelectedSiteSlug] = useState<string | null>(null)
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
   const t = dict[lang]
 
   // Persist language + update html lang
@@ -53,6 +62,43 @@ export default function Home() {
     localStorage.setItem('pp-lang', lang)
     document.documentElement.lang = lang
   }, [lang])
+
+  // Cmd/Ctrl+K command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        if (session) setCmdOpen((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [session])
+
+  // Lightweight unread-notifications count for the bell badge (enabled only when logged in)
+  const { data: notifData } = useQuery<{ notifications: Array<{ read: boolean }> }>({
+    queryKey: ['notifications-count'],
+    queryFn: async () => {
+      const res = await fetch('/api/notifications', { credentials: 'include' })
+      if (!res.ok) throw new Error('failed')
+      return res.json()
+    },
+    enabled: !!session,
+    refetchInterval: 60 * 1000,
+  })
+  const unreadCount = notifData?.notifications?.filter((n) => !n.read).length ?? 0
+
+  // Lightweight dashboard data for the command palette (enabled only when logged in)
+  const { data: cmdData } = useQuery<DashboardDataDTO>({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
+      const res = await fetch('/api/dashboard', { credentials: 'include' })
+      if (!res.ok) throw new Error('failed')
+      return res.json()
+    },
+    enabled: !!session,
+    refetchInterval: 60 * 1000,
+  })
 
   if (status === 'loading') {
     return (
@@ -75,33 +121,33 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4">
+        <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-2 sm:gap-3 px-3 sm:px-4">
           <button
-            className="md:hidden p-1.5 rounded hover:bg-muted"
+            className="md:hidden p-1.5 rounded hover:bg-muted shrink-0"
             onClick={() => setNavOpen((v) => !v)}
             aria-label="Toggle navigation"
           >
             {navOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="relative h-8 w-8 rounded-md bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground shadow-sm">
               <Mountain className="h-4 w-4" />
             </div>
-            <div className="hidden sm:block">
+            <div className="hidden lg:block">
               <div className="font-semibold leading-none" lang={lang}>{t.appName}</div>
               <div className="text-[10px] text-muted-foreground leading-none mt-0.5" lang={lang}>{t.tagline}</div>
             </div>
           </div>
 
           {/* Desktop tabs */}
-          <nav className="hidden md:flex items-center gap-0.5 ml-4">
+          <nav className="hidden md:flex items-center gap-0.5 ml-2">
             {allowedTabs.map((tb) => (
               <button
                 key={tb}
                 onClick={() => setTab(tb)}
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                className={`px-2.5 py-1.5 text-[13px] rounded-md transition-colors whitespace-nowrap ${
                   effectiveTab === tb
-                    ? 'bg-primary text-primary-foreground font-medium'
+                    ? 'bg-primary text-primary-foreground font-medium shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
                 lang={lang}
@@ -113,26 +159,56 @@ export default function Home() {
 
           <div className="flex-1" />
 
+          {/* Command palette trigger */}
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="hidden sm:flex items-center gap-2 h-9 px-2.5 rounded-md border border-border bg-card hover:bg-muted transition-colors text-muted-foreground"
+            aria-label={lang === 'en' ? 'Open command palette' : 'কমান্ড প্যালেট খুলুন'}
+            title={lang === 'en' ? 'Command palette (Ctrl+K)' : 'কমান্ড প্যালেট (Ctrl+K)'}
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span className="text-[11px]">{lang === 'en' ? 'Search…' : 'খুঁজুন…'}</span>
+            <kbd className="text-[9px] font-mono px-1 py-0.5 rounded border border-border bg-muted text-muted-foreground/80 ml-1">⌘K</kbd>
+          </button>
+          <button
+            onClick={() => setCmdOpen(true)}
+            className="sm:hidden p-1.5 rounded-md hover:bg-muted text-muted-foreground"
+            aria-label={lang === 'en' ? 'Search' : 'খুঁজুন'}
+          >
+            <Search className="h-4 w-4" />
+          </button>
+
+          <DhakaClock lang={lang} />
+
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setLang(lang === 'en' ? 'bn' : 'en')}
-            className="gap-1.5"
+            className="gap-1.5 h-9 px-2.5"
+            title={lang === 'en' ? 'Switch to বাংলা' : 'Switch to English'}
           >
             <Globe className="h-4 w-4" />
             <span className="text-xs font-semibold">{lang === 'en' ? 'EN' : 'বাং'}</span>
           </Button>
 
+          <ThemeToggle lang={lang} />
+
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setTab('notifications')}
-            className="gap-1.5 relative"
+            className="gap-1.5 relative h-9 w-9 p-0"
+            aria-label={t.nav.notifications}
           >
             <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-card">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Button>
 
-          <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border">
+          <div className="hidden md:flex items-center gap-2 pl-2 ml-1 border-l border-border">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                 {user.name.split(' ').map((s) => s[0]).join('').slice(0, 2)}
@@ -146,9 +222,9 @@ export default function Home() {
             </div>
           </div>
 
-          <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })} className="gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })} className="gap-1.5 h-9 px-2.5" aria-label={t.login.signOut}>
             <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline" lang={lang}>{t.login.signOut}</span>
+            <span className="hidden lg:inline" lang={lang}>{t.login.signOut}</span>
           </Button>
         </div>
 
@@ -182,18 +258,39 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/60 mt-auto">
-        <div className="mx-auto max-w-[1400px] px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs text-muted-foreground">
+      <footer className="border-t-2 border-border bg-gradient-to-b from-card/40 to-card/80 mt-auto shadow-[0_-1px_0_0_oklch(0.90_0.01_150)]">
+        <div className="mx-auto max-w-[1400px] px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs text-muted-foreground">
           <div className="flex items-start gap-1.5 flex-1" lang={lang}>
             <ShieldAlert className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-600" />
-            <span>{t.footer.disclaimer}</span>
+            <span className="leading-relaxed">{t.footer.disclaimer}</span>
           </div>
-          <div className="text-right" lang={lang}>
-            <div className="font-medium text-foreground/80">{t.footer.version}</div>
-            <div>{t.footer.links}</div>
+          <div className="flex items-center gap-3 text-right shrink-0" lang={lang}>
+            <div>
+              <div className="font-medium text-foreground/80">{t.footer.version}</div>
+              <div className="opacity-70">{t.footer.links}</div>
+            </div>
+            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
+              <Mountain className="h-3.5 w-3.5" />
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Command palette */}
+      {cmdData && (
+        <CommandPalette
+          open={cmdOpen}
+          onOpenChange={setCmdOpen}
+          data={cmdData}
+          lang={lang}
+          role={role}
+          allowedTabs={allowedTabs}
+          onNavigate={(tb) => setTab(tb as Tab)}
+          onToggleLang={() => setLang(lang === 'en' ? 'bn' : 'en')}
+          onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onSignOut={() => signOut({ callbackUrl: '/' })}
+        />
+      )}
     </div>
   )
 }
@@ -265,6 +362,8 @@ function DashboardRouter({
       return <PreparednessView data={data} lang={lang} />
     case 'notifications':
       return <NotificationsView data={data} lang={lang} reload={reload} />
+    case 'audit':
+      return <AuditLogView lang={lang} role={role} />
   }
 }
 

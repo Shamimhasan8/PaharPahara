@@ -58,6 +58,7 @@ export function SitesView({ data, lang }: Props) {
             <ChattogramMap
               sites={sites}
               bulletins={bulletins}
+              cases={cases}
               lang={lang}
               height={420}
               selectedSiteId={selected?.id}

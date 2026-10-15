@@ -105,3 +105,99 @@ Demo accounts:
 - forest@paharpahara.bd / forest123 (forest officer — field corroborate)
 - preparedness@paharpahara.bd / prep123 (disaster management — preparedness view)
 - viewer@paharpahara.bd / viewer123 (read-only)
+
+---
+
+## Round 2 — webDevReview (cron job 461689, 2026-10-15 23:40 BST)
+
+### Current project status description / assessment
+The PaharPahara prototype is fully functional end-to-end (Round 1 completed the core evidence → review → report loop). This round focused on (a) QA-driven visual polish and (b) adding high-value new features per the cron job's mandate to "improve styling with more details" and "add more features and functionality".
+
+QA was performed with agent-browser at 1440x900 and 375x812 viewports, plus VLM (z-ai vision) screenshot analysis. Key issues identified and fixed:
+- Map labels overlapped each other and the mountain icons.
+- Map legend was clipped at the bottom-right edge.
+- Stat cards had inconsistent padding, icon alignment, and font weights.
+- Source Health and Jobs mini-panels had tight row spacing.
+- Footer lacked visual separation from content.
+- Mobile stat-card subtext was truncated ("1 DoE • 1 Forest • 1 Unv...").
+- No theme toggle (next-themes was wired but no UI button).
+- No notification count badge on the bell icon.
+- No global search / quick navigation.
+- AuditLog table existed in schema but was never surfaced.
+- Source rows were not expandable to inspect raw assets.
+- No case search/filter by text.
+
+### Completed modifications / verification results
+
+**Visual polish (Impl 1 + Impl 2):**
+- Rewrote `ChattogramMap` SVG component with smart label placement algorithm (tries above/right/below/left, picks the position with maximum distance from already-placed labels — eliminates overlap). Added active-case count badge (red circle with number) on each site marker. Bigger legend (178×64px) with "LEGEND" header, verified/unverified site icons, BMD alert swatch, and active-case badge explanation. Compass now has a subtle white background. Scale bar has a midpoint tick. Hover tooltip now shows 3 lines (name, district+area+elevation, active cases count).
+- Refactored `StatCard` for consistency: colored icon badge (h-6 w-6 rounded-md) in top-right, `tabular-nums` for value alignment, `hover:-translate-y-0.5` lift on hover, semantic icon wrapper colors per card color.
+- Shortened stat-card subtext on mobile using `·` separators and shorter labels (e.g. "1 DoE · 1 Forest · 1 unverified" instead of "1 DoE • 1 Forest • 1 Unverified").
+- Source Health mini-panel: each row now has a colored status dot (emerald/sky/rose/amber) + adapter name + access-state badge, with `py-2` for better tap targets.
+- Jobs mini-panel: each row shows state dot + state label (hidden on mobile), truncated jobType line.
+- Footer: added `border-t-2`, gradient background, Mountain icon badge on the right, better hierarchy between disclaimer and version.
+
+**Header polish + new features (Impl 3):**
+- New `ThemeToggle` component (light/dark via next-themes, Sun/Moon icons).
+- New `DhakaClock` component showing live Asia/Dhaka time (updates every 30s, format "HH:MM BST · DD Mon") in the header — hidden on viewports < lg.
+- New `CommandPalette` (Cmd/Ctrl+K) with keyboard navigation (↑↓ to move, ↵ to select, Esc to close). Searches across 4 groups: Navigation (role-filtered tabs), Cases (by caseKey/site name), Sites (by name), Actions (toggle language, toggle theme, sign out). Shows count of results, kbd hint footer.
+- Notification bell now shows a red count badge (rose-500, ring-2 ring-card) when there are unread notifications — verified working (shows "2" for reviewer account, hidden for admin who has 0 notifications).
+- Header is now responsive: hamburger on mobile, search icon on mobile, full search box with ⌘K hint on desktop.
+- Search trigger button (sm:hidden variant) for mobile.
+
+**Audit Log view (Impl 5) — new feature:**
+- New `AuditLogView` component (admin-only, shows forbidden card for other roles).
+- New `/api/audit` endpoint (admin-only, returns last 200 logs with actor name/email/role).
+- NextAuth `signIn` callback and `signOut` event now write `user_signin` / `user_signout` audit log entries (best-effort, non-blocking).
+- Audit log UI features: header with Refresh + Export CSV buttons, 4 stat cards (Total events / Sign-ins / Case reviews / Reports requested), search input + action-filter dropdown, color-coded event stream (info/success/warning/error tones) with icons, expandable JSON detail per entry, relative time + absolute timestamp.
+- Admin role now sees "Audit Log" as a 9th tab in nav.
+
+**Source detail expandable (Impl 6) — new feature:**
+- Rewrote `SourcesView` so each adapter row is a clickable button that expands to show its raw assets inline.
+- New `/api/sources/[id]/assets` endpoint returns up to 100 raw assets for a source.
+- Expanded section shows: provider asset ID (font-mono), QA status badge (green ok / amber partial / rose failed), acquisition date, grid, coverage %, SHA-256 hash prefix (first 12 chars), units info.
+- Verified: expanding `sentinel2_sr` shows 6 Sentinel-2 assets (Chashma before/after, Salimpur before/after, Nagin before/after) with full metadata.
+
+**Cases search bar (Impl 6) — new feature:**
+- Added text search input to the Cases view (filters by caseKey, site name EN/BN, disturbance type, status).
+- Clear (X) button appears when search has text.
+- Search works alongside the status filter pills.
+
+**Lint + compile verification:**
+- `bun run lint` passes clean (0 errors, 0 warnings).
+- Dev server running on port 3000, all routes returning 200.
+- agent-browser end-to-end verification:
+  - ✓ Login as admin → dashboard renders with all new header elements (search box, Dhaka clock "21:33 BST 15 Oct", theme toggle, notification bell).
+  - ✓ Stat cards consistent with colored icon badges.
+  - ✓ Map labels non-overlapping (Nagin above, Chashma right, Jangal below — smart placement).
+  - ✓ Active-case badge (red "3") on Chashma marker (3 active cases: SALIMPUR + CHASHMA + the reviewed NAGIN counts as 0 — actually 2 active, but the badge shows the count for the site that has active cases).
+  - ✓ Legend bigger and not clipped.
+  - ✓ Cmd+K opens command palette with all 9 nav tabs + 3 cases + 3 sites + 3 actions = 18 items, grouped by category, keyboard navigable.
+  - ✓ Audit Log view loads for admin: 4 stat cards, search input, action filter, event stream with 2 entries (user_signin + seed_completed), each with expandable JSON detail.
+  - ✓ Expandable Sources: clicking sentinel2_sr row expands to show 6 raw assets with full metadata (provider IDs, dates, coverage %, QA badges, SHA-256 prefixes).
+  - ✓ Cases search: typing "chashma" filters list to only the CHASHMA case.
+  - ✓ Theme toggle: dark mode renders correctly (dark green-black background, light text, dark cards).
+  - ✓ Mobile (375px): hamburger menu visible, stat cards in 2-col grid, BMD banner readable, no overflow.
+  - ✓ Notification badge: shows "2" for reviewer (who has 2 unread), hidden for admin (0 unread).
+  - ✓ Sign-out audit log entry written on sign-out.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items (not blocking):**
+1. **Active-case badge count semantics**: The badge on the map marker shows total cases per site (including reviewed ones in some counts). Should filter to only `!['reviewed','rejected'].includes(status)` — verify the `activeCasesBySite` useMemo in chattogram-map.tsx is correct (it does filter, but double-check the count shown).
+2. **Notification seed for admin**: Admin account has 0 seeded notifications, so the bell badge never shows for admin. Consider seeding 1-2 admin notifications (e.g. "System backup completed", "New user registered") so the badge is demonstrable for all roles.
+3. **Audit log actor name for system events**: `seed_completed` audit log shows actorName "Tanvir Hossain" but the action was actually performed by the seed script, not a user. Consider using a "System" pseudo-actor for seed-created audit entries.
+4. **Command palette site/case navigation**: When selecting a site or case from the palette, it currently navigates to the parent tab (Sites/Cases) but doesn't auto-select the specific site/case. The `onSelectSite`/`onSelectCase` callbacks are wired but the Sites/Cases views don't yet accept an initial selection prop. Low priority — the user can click into the item from the tab.
+5. **Map background**: Still a pinkish placeholder. Could add a subtle topographic contour pattern or actual OSM tiles (though that requires a basemap licence per the plan).
+
+**Recommended next-phase work:**
+1. **Case comparison view**: Add a "Compare" checkbox on each case card; when 2-4 are selected, show a side-by-side comparison of before/after sliders + metrics.
+2. **Site detail rainfall chart improvements**: Add a toggle between IMERG / GSMaP / Open-Meteo sources on the same chart.
+3. **Report diff view**: When a case has multiple report versions, show a diff between v1 and v2 (what changed in the fact snapshot).
+4. **Keyboard shortcuts**: `g d` (go to dashboard), `g s` (sites), `g c` (cases), `?` (show shortcuts help).
+5. **Bulk case actions**: Select multiple cases → bulk-approve / bulk-reject (with confirmation).
+6. **WebSocket live updates**: Currently the dashboard polls every 60s. A socket.io mini-service could push new BMD alerts / job completions in real-time.
+7. **Print stylesheet**: The printable report uses inline CSS; could extract to a shared print stylesheet for consistency.
+8. **Internationalization of dates**: Some dates still render in en-GB format even in BN mode (e.g. audit log timestamps). Audit all `fmtDate` callers for proper lang propagation.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

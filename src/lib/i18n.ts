@@ -14,6 +14,7 @@ export type Dict = {
     jobs: string
     notifications: string
     preparedness: string
+    audit: string
   }
   common: {
     loading: string
@@ -223,6 +224,7 @@ export const dict: Record<Lang, Dict> = {
       jobs: 'Jobs',
       notifications: 'Notifications',
       preparedness: 'Preparedness',
+      audit: 'Audit Log',
     },
     common: {
       loading: 'Loading…',
@@ -430,6 +432,7 @@ export const dict: Record<Lang, Dict> = {
       jobs: 'জব',
       notifications: 'বিজ্ঞপ্তি',
       preparedness: 'প্রস্তুতি',
+      audit: 'অডিট লগ',
     },
     common: {
       loading: 'লোড হচ্ছে…',

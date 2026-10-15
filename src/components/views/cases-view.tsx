@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers } from 'lucide-react'
+import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers, Search, X } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { CaseDTO, DashboardDataDTO, Role } from '@/lib/types/dto'
@@ -40,6 +40,7 @@ export function CasesView({ data, lang, role, reload }: Props) {
   const t = dict[lang]
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<StatusFilter>('active')
+  const [search, setSearch] = useState('')
 
   const selected = data.cases.find((c) => c.id === selectedId) ?? null
 
@@ -47,6 +48,16 @@ export function CasesView({ data, lang, role, reload }: Props) {
     if (filter === 'all') return true
     if (filter === 'active') return !['reviewed', 'rejected'].includes(c.status)
     return c.status === filter
+  }).filter((c) => {
+    const q = search.trim().toLowerCase()
+    if (!q) return true
+    return (
+      c.caseKey.toLowerCase().includes(q) ||
+      c.siteNameEn.toLowerCase().includes(q) ||
+      c.siteNameBn.includes(q) ||
+      c.disturbanceType?.toLowerCase().includes(q) ||
+      c.status.toLowerCase().includes(q)
+    )
   })
 
   if (selected) {
@@ -61,33 +72,54 @@ export function CasesView({ data, lang, role, reload }: Props) {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-1.5">
-        {STATUS_FILTERS.map((f) => {
-          const count = f === 'all' ? data.cases.length : f === 'active' ? data.cases.filter((c) => !['reviewed', 'rejected'].includes(c.status)).length : data.cases.filter((c) => c.status === f).length
-          const labels: Record<string, string> = {
-            all: t.common.all,
-            active: lang === 'en' ? 'Active' : 'সক্রিয়',
-            candidate: t.status.candidate,
-            under_review: t.status.underReview,
-            field_verification: t.status.fieldVerification,
-            reviewed: t.status.reviewed,
-            rejected: t.status.rejected,
-            field_corroborated: t.status.fieldCorroborated,
-          }
-          return (
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-1.5 flex-1">
+          {STATUS_FILTERS.map((f) => {
+            const count = f === 'all' ? data.cases.length : f === 'active' ? data.cases.filter((c) => !['reviewed', 'rejected'].includes(c.status)).length : data.cases.filter((c) => c.status === f).length
+            const labels: Record<string, string> = {
+              all: t.common.all,
+              active: lang === 'en' ? 'Active' : 'সক্রিয়',
+              candidate: t.status.candidate,
+              under_review: t.status.underReview,
+              field_verification: t.status.fieldVerification,
+              reviewed: t.status.reviewed,
+              rejected: t.status.rejected,
+              field_corroborated: t.status.fieldCorroborated,
+            }
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  filter === f
+                    ? 'bg-primary text-primary-foreground border-primary font-medium'
+                    : 'bg-card text-muted-foreground border-border hover:bg-muted'
+                }`}
+              >
+                {labels[f]} <span className="opacity-60">({count})</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={lang === 'en' ? 'Search case, site, type…' : 'কেস, সাইট, ধরন খুঁজুন…'}
+            className="w-full h-8 pl-8 pr-3 text-xs rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+          {search && (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                filter === f
-                  ? 'bg-primary text-primary-foreground border-primary font-medium'
-                  : 'bg-card text-muted-foreground border-border hover:bg-muted'
-              }`}
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label={t.common.close}
             >
-              {labels[f]} <span className="opacity-60">({count})</span>
+              <X className="h-3 w-3" />
             </button>
-          )
-        })}
+          )}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
