@@ -1,0 +1,267 @@
+// PaharPahara — Prisma schema
+// Hill disturbance screening & weather preparedness prototype for Chattogram, Bangladesh.
+// Adapted from the Definitive Prototype Plan: provider feeds are represented as
+// clearly-labelled historical/demo data with adapter-ready schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Users & roles ----------
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String // hashed (bcrypt-style placeholder hash for demo)
+  role      String   @default("viewer") // admin | doe_reviewer | forest_officer | preparedness | viewer
+  agency    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessments  Assessment[]
+  reviews      ReviewHistory[]
+  notifications Notification[]
+  auditLogs    AuditLog[]
+}
+
+// ---------- Sites (verified hill geometries) ----------
+
+model Site {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  nameEn          String
+  nameBn          String
+  district        String
+  lat             Float
+  lng             Float
+  // GeoJSON polygon (WGS84) stored as JSON string
+  geometryJson    String
+  areaHectares    Float
+  elevationM      Float
+  slopeMaxDeg     Float?
+  jurisdiction    String   @default("unverified") // verified_doe | verified_forest | unverified
+  verificationSrc String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  cases           Case[]
+  weatherIntervals WeatherInterval[]
+}
+
+// ---------- Source registry & raw assets (provenance) ----------
+
+model SourceRegistry {
+  id            String   @id @default(cuid())
+  adapter       String   @unique // sentinel2_sr | cloud_score_plus | dynamic_world | copernicus_dem | imerg_early | gsmap | open_meteo | open_meteo_ensemble | bmd_cap
+  product       String
+  version       String
+  licence        String
+  accessState   String   @default("historical_replay") // live | stale | historical_replay | unavailable
+  lastCheckedAt DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rawAssets     RawAsset[]
+}
+
+model RawAsset {
+  id             String   @id @default(cuid())
+  sourceId       String
+  source         SourceRegistry @relation(fields: [sourceId], references: [id])
+  // Generic provider asset id (e.g. Sentinel-2 MGRS tile + date, IMERG granule id)
+  providerAssetId String
+  siteId         String?
+  acquiredAt     DateTime
+  validStart     DateTime
+  validEnd       DateTime
+  issueRunTime   DateTime?
+  retrievalTime  DateTime
+  grid           String? // e.g. "10m" / "0.1deg" / "T43QCE_20260708"
+  geometry       String?
+  qaStatus       String   @default("ok") // ok | partial | failed | qa_missing
+  coveragePct    Float?
+  fileUri        String   // path under /public or signed URL placeholder
+  sha256         String
+  units          String?
+  intervalMinutes Int?   // for rainfall rates/accumulations
+  isAccumulation Boolean @default(false)
+  createdAt      DateTime @default(now())
+
+  beforeAssets   Case[] @relation("BeforeAssetRelation")
+  afterAssets    Case[] @relation("AfterAssetRelation")
+}
+
+// ---------- Weather (rainfall estimates + forecasts) ----------
+
+model WeatherInterval {
+  id            String   @id @default(cuid())
+  siteId        String
+  site          Site     @relation(fields: [siteId], references: [id])
+  source        String   // imerg_early | gsmap | open_meteo | open_meteo_ensemble
+  intervalStart DateTime
+  intervalEnd   DateTime
+  valueMm       Float    // accumulated mm over the interval
+  isForecast    Boolean  @default(false)
+  isComplete    Boolean  @default(true)
+  memberCount   Int?
+  // For ensemble: how many members exceeded threshold
+  exceedanceProb Float?
+  issueRunTime  DateTime?
+  retrievalTime DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+// ---------- BMD CAP bulletins ----------
+
+model Bulletin {
+  id             String   @id @default(cuid())
+  capIdentifier  String   @unique
+  sender         String
+  messageType    String   // alert | update | cancel | ack | error
+  sentAt         DateTime
+  effectiveAt    DateTime?
+  onsetAt        DateTime?
+  expiresAt      DateTime? // official XML expiry
+  textEffectiveStart DateTime? // text-derived window start
+  textEffectiveEnd   DateTime? // text-derived window end
+  hasValidityConflict Boolean @default(false)
+  headlineEn     String
+  headlineBn     String
+  descriptionEn  String
+  descriptionBn  String
+  areaDesc       String
+  geometryJson   String?  // CAP polygon -> GeoJSON
+  referencesJson String?  // prior CAP identifiers
+  retrievalTime  DateTime @default(now())
+  createdAt      DateTime @default(now())
+}
+
+// ---------- Cases & review workflow ----------
+
+model Case {
+  id              String   @id @default(cuid())
+  caseKey         String   @unique // human-readable, e.g. CHASHMA-2026-07-08
+  siteId          String
+  site            Site     @relation(fields: [siteId], references: [id])
+  status          String   @default("candidate") // candidate | under_review | field_verification | reviewed | rejected | field_corroborated
+  disturbanceType String?  // vegetation_clearance | construction | landslide_scar | seasonal
+  detectedAt      DateTime
+  beforeAssetId   String?
+  beforeAsset     RawAsset? @relation("BeforeAssetRelation", fields: [beforeAssetId], references: [id])
+  afterAssetId    String?
+  afterAsset      RawAsset? @relation("AfterAssetRelation", fields: [afterAssetId], references: [id])
+  changedAreaHa   Float?
+  ndviDelta       Float?
+  bareSoilDelta   Float?
+  dwTreeProbDelta Float?
+  dwBareProbDelta Float?
+  coveragePct     Float?
+  methodVersion   String?
+  screeningRule   String?
+  uncertaintyNotes String?
+  revision        Int      @default(1) // bumped on each edit to prevent concurrent overwrites
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  assessments     Assessment[]
+  reviews         ReviewHistory[]
+  reportVersions  ReportVersion[]
+}
+
+model Assessment {
+  id            String   @id @default(cuid())
+  caseId        String
+  case          Case     @relation(fields: [caseId], references: [id])
+  reviewerId    String
+  reviewer      User     @relation(fields: [reviewerId], references: [id])
+  decision      String   // approved | rejected | field_verification_requested | needs_more_evidence
+  rationale     String
+  permitStatus  String?  // verified | unverified | missing | not_applicable
+  nextAction    String?
+  caseRevision  Int      // snapshot of Case.revision at review time
+  createdAt     DateTime @default(now())
+
+  reviews       ReviewHistory[]
+}
+
+model ReviewHistory {
+  id            String   @id @default(cuid())
+  caseId        String
+  case          Case     @relation(fields: [caseId], references: [id])
+  assessmentId  String?
+  assessment    Assessment? @relation(fields: [assessmentId], references: [id])
+  actorId       String
+  actor         User     @relation(fields: [actorId], references: [id])
+  action        String   // opened | status_changed | reviewed | commented | report_requested
+  fromStatus    String?
+  toStatus      String?
+  note          String?
+  createdAt     DateTime @default(now())
+}
+
+// ---------- Reports ----------
+
+model ReportVersion {
+  id             String   @id @default(cuid())
+  caseId         String
+  case           Case     @relation(fields: [caseId], references: [id])
+  version        Int      @default(1)
+  status         String   @default("draft") // draft | reviewed | field_corroborated
+  factSnapshotJson String // frozen fact JSON
+  pdfUri         String?  // generated PDF path
+  pdfSha256      String?
+  requestedById  String?
+  createdAt      DateTime @default(now())
+}
+
+// ---------- Jobs & notifications ----------
+
+model Job {
+  id            String   @id @default(cuid())
+  jobKey        String   @unique // dedup id
+  jobType       String   // refresh_weather | discover_bmd | dispatch_job | review_case | request_report | ee_export | imerg_parse | render_pdf
+  state         String   @default("queued") // queued | running | completed | failed | retry
+  payloadJson   String
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
+  leaseOwner    String?
+  leaseExpiresAt DateTime?
+  taskIds       String?  // GitHub Actions run ids / heartbeat tokens
+  lastHeartbeat DateTime?
+  error         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notification {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  dedupKey      String?
+  category      String   // case | bmd | source | job | report
+  titleEn       String
+  titleBn       String
+  bodyEn        String
+  bodyBn        String
+  severity      String   @default("info") // info | success | warning | error
+  read          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorId       String?
+  actor         User?    @relation(fields: [actorId], references: [id])
+  action        String
+  target        String?
+  detailJson    String?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+}

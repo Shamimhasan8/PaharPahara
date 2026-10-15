@@ -1,0 +1,302 @@
+    20→```text
+    21→You are the principal product engineer, geospatial data engineer, security reviewer, and test lead for PaharPahara. Build a deployable, cloud-hosted prototype for evidence-led hill-disturbance screening and weather preparedness in Chattogram, Bangladesh. The product is an inspection and decision-support system, not an autonomous landslide predictor, legal-enforcement system, or official warning issuer.
+    22→
+    23→SOURCE OF TRUTH
+    24→Use the supplied PaharPahara Definitive Prototype Plan as the product/architecture specification. Preserve its terminology and boundaries. If a detail is absent or unsupported, mark it as an explicit TODO or configurable decision; do not silently invent evidence, boundaries, thresholds, provider access, partnerships, legal conclusions, or performance claims.
+    25→
+    26→PRIMARY DEMONSTRATION LOOP
+    27→1. Ingest or load a source-labelled record and validate it.
+    28→2. Persist the raw/source metadata, time interval, QA state, version, and integrity information.
+    29→3. Show evidence on a site map/detail screen, including source freshness and uncertainty.
+    30→4. Let an authenticated, authorized human reviewer record a decision and rationale against a specific case revision.
+    31→5. Queue report generation, freeze the fact snapshot, produce a bilingual English/Bangla report PDF, save its version and hash, and permit only authorized downloads.
+    32→This loop must work end to end on the deployed cloud app after the developer's computer and Codespace are closed. A polished disconnected UI does not satisfy the goal.
+    33→
+    34→FROZEN ARCHITECTURE
+    35→- UI/application: Lovable-assisted React + TypeScript, current TanStack Start starter, Tailwind, MapLibre; Vercel deployment. Inspect generated files and the lockfile before changing build/deployment configuration. Do not use an old Vite/static-dist recipe if the generated app is TanStack Start with server output.
+    36→- Backend: a team-owned Supabase project for Auth, PostgreSQL + PostGIS, private Storage, RLS, restricted database functions, and thin TypeScript Edge Functions. Do not use the built-in Lovable Cloud backend for this project.
+    37→- Heavy work: Python 3.12 workers in GitHub Actions using the Earth Engine Python API. Run geospatial exports, larger CAP normalization, rainfall parsing, evaluation, and archived PDF rendering here—not in browser code or CPU-limited Edge Functions.
+    38→- Scheduling: Supabase Cron + pg_net dispatch, with a documented off-peak GitHub Actions backup schedule. Use a single jobs table and durable leases/heartbeats/idempotency; no separate FastAPI service, Docker Compose, or Next.js API layer.
+    39→- Browser-based development: GitHub-backed repository and Codespaces; do not require a developer's machine to keep the deployed application operating.
+    40→
+    41→BUILD PRIORITIES
+    42→P0: build/deploy/auth/schema/RLS and verified site records.
+    43→P1: map/site views, historical Chashma Hill replay, one genuinely live forecast stream, BMD discovery/import fallback, provenance/freshness.
+    44→P2: durable jobs, weather/rainfall ingestion, satellite disturbance evidence.
+    45→P3: authorized review state machine, immutable report snapshots, bilingual report/PDF and private download.
+    46→P4: evaluation, operational health, recovery/security/accessibility checks and demo package.
+    47→Only after these pass: one ensemble rainfall family, small local classifier if labels support it, or grounded LLM summaries if policy/budget permit. Voice alerts, public warning broadcasts, calibrated landslide prediction, radar, AlphaEarth, LHASA/DIST-ALERT comparisons, offline sync and high-resolution exposure analysis are out of initial scope.
+    48→
+    49→INITIAL SITES AND STORY
+    50→Start with three documented sites: Chashma Hill near Mayor Goli; a small Jangal Salimpur study area whose jurisdiction remains unverified until supported by authoritative records; and a third hill chosen only after imagery and boundary verification (Nagin Hill is a candidate, not a confirmed site). Keep evaluation locations separate from development/tuning locations. Expand to five only after the end-to-end loop passes. Lead the demo with the 8 July 2026 Chashma Hill case using archived evidence with clearly displayed historical timestamps. Do not use victim names or photographs. A retrospective replay explains evidence available at specified times; it must not imply the product certainly would have prevented the event.
+    51→
+    52→SOURCE CONTRACTS
+    53→- Optical analysis: Earth Engine collections COPERNICUS/S2_SR_HARMONIZED, GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED, GOOGLE/DYNAMICWORLD/V1, and COPERNICUS/DEM/GLO30_2024_1. Join Cloud Score+ to Sentinel-2 assets; initial cs_cdf >= 0.60 is a tunable development parameter. Missing cloud-quality assets are missing inputs—not permission to keep all pixels. Dynamic World is derived from Sentinel-2 and is corroborating evidence, not an independent sensor. Cache/export terrain with provenance; DEM is roughly 30 m and cannot measure new excavation volume or current cliff geometry.
+    54→- Rainfall: primary live adapter NASA IMERG Early V07, short name GPM_3IMERGHHE. Discover collection/granules via NASA CMR using short name/version and authenticated Earthdata/earthaccess; do not hard-code an observed collection ID as a permanent contract. Inspect real metadata, field, shape, units, fill values, and temporal meaning before parsing. A half-hour rate in mm/hour contributes rate × 0.5 hours; already accumulated values must not be multiplied again. Missing values stay missing. Keep GSMaP v8 as a separate historical cross-check, not interchangeable with IMERG.
+    55→- Forecast: backend adapter to Open-Meteo hourly precipitation; persist raw response, requested and returned coordinates, units, fetch time, returned model/run metadata where available. A documented test URL is `https://api.open-meteo.com/v1/forecast?latitude=22.36&longitude=91.82&hourly=precipitation&forecast_days=3&timezone=UTC&models=gfs_seamless`. These coordinates are for testing only—not a verified hill location. Treat hourly precipitation as belonging to the preceding hour. Store UTC interval boundaries and display in Asia/Dhaka. Separate past observed/estimated totals from future 6/24/48-hour forecast totals.
+    56→- BMD: discover CAP documents from both `https://cap.bmd.gov.bd/api/cap/rss.xml` and `https://cap.bmd.gov.bd/bmd-cap-alerts/`, following XML links actually published. Parse CAP 1.2 identifier, sender, message type, references, sent/effective/onset/expires, text and affected geometry; persist revisions, updates, cancellations and deduplicate. CAP coordinate pairs are latitude/longitude; GeoJSON is longitude/latitude. Validate geometry before point-in-polygon matching. Preserve XML validity and text-described validity separately. The supplied plan records a 5 July XML effective time of 5 July 07:00 UTC and expiry 6 July 07:00 UTC while its text describes 72 hours from 5 July 13:00 Bangladesh time. Display “validity conflict — human review required”; never silently extend official expiry. If live discovery fails, offer restricted manual import and explicitly labelled archive replay.
+    57→
+    58→DATA INTEGRITY / FRESHNESS
+    59→Every source record/asset must include provider/product/version, provider asset ID, valid interval or acquisition time, issue/run time when known, retrieval time, grid/site geometry, units, QA status, storage path and SHA-256 where a file is saved. Use null plus an explanation when a timestamp is unknown. Source states are live, stale, historical replay or unavailable. Engineering freshness policies (not hazard thresholds): forecasts stale after 2h and no new automatic suggestions after 6h; rainfall delayed if the end of latest contiguous valid interval is >6h old; optical evidence stale after 14 days; BMD status unknown after two missed hourly checks. Still display known official bulletins when other feeds fail.
+    60→
+    61→RAIN WINDOW RULES
+    62→Let D be the end of the latest contiguous valid rainfall interval. Compute complete past 24/48/72h and 5-day totals ending at D. For half-hour data, complete windows need 48/96/144/240 expected intervals. A window with gaps is incomplete; never replace missing rainfall with zero, double-count overlapping accumulation windows, or mix estimates and forecasts without an explicitly defined and validated method. Display cutoff D and completeness clearly.
+    63→
+    64→VISIBLE ANALYSIS — CUTWATCH
+    65→- Compare suitable before/after windows or season-matched windows; reject badly registered pairs and major seasonal mismatches.
+    66→- Mask cloud/shadow with Cloud Score+; measure common valid coverage. Start with 60% coverage as a development gate, then tune using development sites and freeze before held-out evaluation.
+    67→- Calculate NDVI and a documented bare-soil index change; add Dynamic World tree/bare/built probability changes where data exist.
+    68→- Limit candidates to verified site geometry, show slope/relief as context, and acknowledge terrain illumination/shadow effects.
+    69→- Group candidates into polygons. An initial 0.1 ha minimum polygon filter is a tunable heuristic, not a proven minimum detectable size.
+    70→- Store date range, approximate area, source IDs, common coverage, method version and uncertainty. A candidate may represent vegetation clearance, construction, seasonal change or a landslide scar. Never assert an offence from satellite pixels alone. If Dynamic World is missing, label the output “spectral baseline; AI corroboration unavailable.”
+    71→
+    72→SCREENING AND HUMAN AUTHORITY
+    73→Allowed states: Insufficient data; Monitor; Review; Priority review suggested. These are attention/review states, not safety declarations or landslide probabilities. Show an independent BMD banner in every state. A rainfall threshold crossing is not proof of hill cutting; a disturbance candidate cannot by itself change rainfall thresholds. YPSA’s published 100–120 mm/24h trigger may be displayed as a sourced research comparison with context, not a validated site-level alert. Other candidate thresholds remain disabled until primary definitions and endpoints are verified. Never label rainfall exceedance as “landslide probability.” All official warnings, evacuation directions, permits, enforcement, legal conclusions and public warning decisions remain with the responsible authority.
+    74→
+    75→CASE WORKFLOW
+    76→Case states: candidate, under review, rejected, field verification requested, reviewed, optionally field corroborated. Sensitive transitions must check the authenticated user's JWT and role in a restricted DB function or Edge Function, append review history, and use expected case revision to prevent lost updates. Users cannot change their own role. Report requests pin an exact case revision and frozen fact snapshot; refreshing data must not change old reports.
+    77→
+    78→REPORTS
+    79→Report title: “Hill disturbance and weather assessment.” Status: draft, reviewed, or field corroborated. Include site/case/polygon, imagery dates and QA/common coverage, approximate changed area, known terrain limitations, rainfall windows/units/cutoff/completeness, forecast horizon, BMD source/status and validity conflicts, permit/jurisdiction status, reviewer/rationale, next action, source IDs/hashes, snapshot revision and template version. Bundle Noto Sans Bengali and test Bangla shaping/conjuncts. Browser print view is a preview; use a shaping-capable Chromium/Playwright worker in GitHub Actions to archive the PDF from the same frozen snapshot. Save privately in Supabase Storage. Authorized QR links resolve to an authorized evidence snapshot, not a public case dump. Hashes detect byte changes; they do not prove source claims or create a legal digital signature.
+    80→
+    81→SECURITY
+    82→- Apply RLS to user-accessible tables and private Storage. Default deny. Separate admin, authorized reviewer, read-only judge/viewer, and field-contributor scopes. Verify all permissions on the server/database, not just by hiding UI controls.
+    83→- Do not expose Supabase service-role credentials, Earth Engine keys, NASA credentials, GitHub tokens, scheduler secrets, or provider secrets in browser bundles/logs. Use separate server/worker secrets and least privilege.
+    84→- Limit CORS to configured Vercel origins, validate payload size and geometry, rate-limit/guard expensive actions where supported, restrict callable SECURITY DEFINER functions, set safe search_path, and write audit events for important transitions.
+    85→- No public resident registry, household targeting, automated summons, eviction instructions, unsupervised voice broadcasts, or collection of personal contact lists.
+    86→
+    87→TRUTHFULNESS AND ENGINEERING PROCESS
+    88→Before editing, inspect the repository structure, current package/lockfile, generated TanStack Start conventions, existing Supabase setup, and environment variable patterns. Avoid replacing working project files blindly. Work in small reviewable increments. Use migrations in `supabase/migrations/`, regenerate database TypeScript types, add automated tests and integration fixtures, and write setup/run/deploy instructions. Never commit secrets. Never fabricate sites, coordinates, images, rainfall measurements, warning content, provider status, evaluation metrics, successful tests, partnerships, endorsements, or cost guarantees. Distinguish LIVE, HISTORICAL REPLAY, FIXTURE, UNAVAILABLE and EXPERIMENTAL in both UI and records.
+    89→
+    90→For each task:
+    91→1. Summarize the exact scope and assumptions.
+    92→2. Inspect existing code before editing.
+    93→3. Implement only that task, preserving unrelated work.
+    94→4. List files changed and key design decisions.
+    95→5. Run applicable lint/typecheck/unit/integration/build tests; report real output and failures honestly.
+    96→6. Provide manual test steps and the acceptance gate.
+    97→7. Stop if a required external account/secret/verified boundary is missing; make a clear setup checklist rather than pretending it succeeded.
+    98→
+    99→Start by asking no broad questions. If configuration is missing, create a safe template and continue with all work possible without it. The priority is the real deployed evidence-to-review-to-report loop, with explicit limitations.
+   100→```
+   101→
+   102→---
+   103→
+   104→# B. Sequential Implementation Prompts
+   105→
+   106→## Prompt 0 — Inspect the generated project and establish a safe baseline
+   107→
+   108→```text
+   109→Implement Phase 0 only: repository reconnaissance and build baseline. Do not build all product screens yet.
+   110→
+   111→1. Inspect the repository, package.json, lockfile, TanStack Start entry points, Vercel configuration, TypeScript config, Tailwind setup, lint/test scripts, GitHub workflows, and any existing Supabase integration.
+   112→2. Confirm whether the starter is current TanStack Start/Nitro or an older Vite app. Do not guess and do not replace the package manager/lockfile.
+   113→3. Create a concise `docs/implementation-status.md` with: observed stack, existing app routes, environment variables needed (names only), deployment prerequisites, test commands, known blockers and next phase.
+   114→4. Add or update `.env.example` with non-secret placeholders only. Ensure actual `.env*` files holding secrets are ignored by Git.
+   115→5. Add basic formatting/lint/typecheck/test/build scripts only if missing and compatible with the existing project. Add a minimal CI workflow for install, lint/typecheck, unit tests, and build.
+   116→6. Deploy a minimal starter to Vercel only if the team has supplied/configured access. Do not fake a successful deployment.
+   117→
+   118→Acceptance gate: lockfile remains consistent; local/cloud CI commands are documented; no secrets are committed; the build output and framework deployment path are understood. Report blockers precisely, then stop.
+   119→```
+   120→
+   121→## Prompt 1 — Connect the team's Supabase project and implement authentication
+   122→
+   123→```text
+   124→Implement Phase 1 only: owned Supabase connection and secure authentication.
+   125→
+   126→Assume the team creates/selects its own Supabase project and connects it to the Lovable project. Use this external backend; do not migrate to Lovable Cloud. Enable PostGIS through a reviewed migration or dashboard checklist if permissions require a manual action.
+   127→
+   128→Implement:
+   129→- Supabase client initialization using the environment conventions verified in Prompt 0.
+   130→- Sign-in/sign-out and session restoration; a clear protected-route pattern compatible with this TanStack Start project.
+   131→- A profile/role lookup from a protected table or secure server-side path. Do not trust user-supplied role claims from form fields or client metadata.
+   132→- Role labels: `admin`, `reviewer`, `viewer`, `field_contributor`. The server/database is authoritative; no self-service role editing.
+   133→- Auth redirect URLs and local/Vercel setup instructions. Keep the service-role key server-only and omit it from browser configuration.
+   134→- Loading, expired-session, unauthorized and error states; never silently show a privileged screen on auth failure.
+   135→
+   136→Create a sanitized `/demo` access path only if it still requires an authenticated viewer account. No hardcoded shared production passwords.
+   137→
+   138→Acceptance gate: sign-in survives refresh; sign-out invalidates protected access; unauthenticated requests cannot read private operational data; a viewer cannot invoke a reviewer action even by calling the underlying function directly. Provide reproducible tests and identify any manual Supabase dashboard setup.
+   139→```
+   140→
+   141→## Prompt 2 — Database migrations, spatial records, RLS, and private storage
+   142→
+   143→```text
+   144→Implement Phase 2 only: the initial database schema, indexes, constraints, role policies, and private storage setup. Inspect the existing schema first and use additive/reversible migrations where practical. Put SQL in `supabase/migrations/` and regenerate TypeScript types after applying it where credentials are available.
+   145→
+   146→Create a coherent normalized schema for at least:
+   147→- `profiles`: auth user ID, assigned role, display name, created/updated timestamps. Users must not be able to assign/change their own role.
+   148→- `sites`: stable ID, name, description, Point/Polygon/MultiPolygon in PostGIS, geometry version, boundary source, verification status/source/date, jurisdiction status/source, enabled flag, created/updated time. Unverified boundaries must be explicitly marked and must not be treated as analysis truth.
+   149→- `source_registry`: provider, product, adapter/version, licence/attribution text, source contract, access state, latest check, metadata.
+   150→- `raw_assets`: source registry reference, provider asset ID, acquisition/valid interval, issued/run time when known, retrieval time, geometry/grid, units, QA status, storage path, SHA-256, replay/live state and metadata JSON.
+   151→- `weather_intervals`: source, grid/cell or site link, explicit UTC interval start/end, estimated/forecast type, precipitation value/unit, QA/completeness, issue/run/fetch times and source asset reference. Prevent duplicate provider intervals and preserve source identity.
+   152→- `bulletins`: CAP identifier/sender/message type/references/revision, sent/effective/onset/expires, text, original and normalized geometry, status/update/cancel linkage, retrieval time and validity-conflict flag/details.
+   153→- `cases`: site, candidate geometry, state, revision integer, source time range, candidate area, method version, coverage, confidence/uncertainty description and timestamps.
+   154→- `assessments`: case revision, feature cutoff/completeness, screening rule version, source record references, computed facts and quality checks.
+   155→- `reviews`: case/revision, action, reviewer ID, reason, created timestamp, append-only behavior.
+   156→- `report_versions`: case/revision, status, snapshot JSON, template version, PDF private path, SHA-256, created by/time, output state.
+   157→- `jobs`: key/type, payload, queued/running/completed/failed state, lease/worker identity, attempts, next retry, provider task IDs, heartbeat, result/error summary, idempotency key and timestamps.
+   158→- `notifications`: recipient/role, type, deduplication key, message, target reference, read/created timestamps.
+   159→
+   160→Apply foreign keys, unique provider keys/idempotency keys, check constraints for states/times/units, and indexes for spatial filtering and temporal queries. Large raster/file bytes belong in private Supabase Storage, not SQL rows. Set reasonable upload-size/type constraints and path conventions.
+   161→
+   162→RLS must be enabled on all tables exposed to the Data API. Default deny. Viewers may read only sanitized permitted demo records; reviewers may read assigned/authorized operational cases and create review transitions only through the controlled function; field contributors may upload to assigned cases only; admins may manage setup records under server/database authorization. Prevent direct client updates to role, audit/review history, report snapshots and job status. Protect Storage objects with matching authorization checks. Do not use public buckets for case evidence or PDFs.
+   163→
+   164→Add test fixtures and policy tests where possible. Do not insert fake operational data; clearly labelled test fixtures are acceptable in test/dev only. Document migrations, required dashboard actions and how to restore a backup.
+   165→
+   166→Acceptance gate: migrations apply cleanly on a fresh test project; duplicate source records are rejected/idempotent; RLS and Storage isolation tests show no anonymous/private cross-role access; roles cannot be self-elevated; generated types match the schema.
+   167→```
+   168→
+   169→## Prompt 3 — App shell, site dashboard, map, and evidence views
+   170→
+   171→```text
+   172→Implement Phase 3 only: the product shell and read-only data views wired to Supabase. Keep the visual design professional and operational, not a generic marketing landing page.
+   173→
+   174→Build these routes/views using the project's existing TanStack Start patterns:
+   175→- `/dashboard`: reviewed overview of sites needing attention, current source status, most recent verified inputs, active BMD bulletins, queued/failed jobs and recent decisions. Every KPI must be derived from real stored records or display “No data”; do not invent counts.
+   176→- `/map`: MapLibre map using verified site geometries and app-exported Sentinel imagery/chips when available. If no imagery is stored, show a clear unavailable/replay state—not a screenshot posing as live satellite imagery. Do not scrape Google Maps/Google Earth tiles; verify basemap licence.
+   177→- `/sites/:siteId`: boundary verification status, source freshness panel, before/after control or slider, acquisition dates, imagery QA/common coverage, terrain/slope context, rainfall timeline, forecast and applicable BMD warnings.
+   178→- `/cases`: searchable/filterable case queue by status, site, date, evidence quality and source state.
+   179→- `/health`: source and job-health table including last successful check, expected cadence, last data valid time, failure state and next retry if known.
+   180→- `/reports`: authorized report archive, status, revision, report date and download action.
+   181→
+   182→Use clear status treatments: LIVE, HISTORICAL REPLAY, FIXTURE, STALE, UNAVAILABLE, EXPERIMENTAL. Historical replay screens must show their historical as-of timestamp prominently and must not share an ambiguous “current” label with live data. Display units and timezone. Include loading, empty, permission-denied, stale-data, provider-failure and retry states. Make the key tasks usable on laptop and mobile, accessible by keyboard, with meaningful labels and sufficient contrast.
+   183→
+   184→Use realistic empty states and sanitized development fixtures only where needed; put them behind a fixture/replay indicator and never mix them into operational aggregates by default. Do not add unsupported “risk scores” or a red/green “safe/unsafe” indicator.
+   185→
+   186→Acceptance gate: map and lists render records loaded from Supabase; changing a record in a second authenticated browser is reflected after refresh/realtime update if subscribed; no seeded fictional dashboard counts; boundary/source lineage is visible; mobile and keyboard smoke test passes.
+   187→```
+   188→
+   189→## Prompt 4 — Forecast adapter and correct weather timeline
+   190→
+   191→```text
+   192→Implement Phase 4 only: a secure, server-side Open-Meteo forecast adapter and weather presentation. Read the source contract in the master prompt.
+   193→
+   194→Server/backend requirements:
+   195→- Fetch Open-Meteo from a backend-only adapter with bounded timeout, input validation, and safe error handling. Never expose arbitrary URL fetches to a client-supplied host.
+   196→- Allow only verified site coordinates for operational forecast queries. Keep the plan's 22.36, 91.82 sample coordinates in a clearly labelled integration-test fixture only; do not associate it with a real hill unless verified.
+   197→- Request UTC and explicit model settings from configuration. Persist requested coordinates, returned coordinates, units, fetch time, raw response or private object path, response hash, model/run metadata if provided, adapter version and source state.
+   198→- Convert hourly precipitation into explicit UTC intervals, treating the value as the preceding hour. Display labels in `Asia/Dhaka` without changing stored timestamps.
+   199→- Calculate the next 6/24/48-hour forecast totals separately from historical rainfall. Do not merge future forecast totals into past observed/estimated rainfall totals.
+   200→- Cache appropriately, avoid duplicate writes, and expose fetch time plus staleness. Provider timeout/rate limit should create a recoverable error state and retain the previous record marked stale.
+   201→
+   202→Frontend: on site detail and preparedness view show forecast timeline, future accumulation windows, requested/returned coordinates and “forecast—not observation” label. Do not call this a landslide probability. If the source is unavailable, preserve official BMD information and show the last known forecast's age.
+   203→
+   204→Add fixture-based tests for UTC/Dhaka conversion, interval boundaries, preceding-hour semantics, missing values, units, duplicated fetches and provider errors. Add an integration test using a real response only where network credentials/policy permit, and record its date/result.
+   205→
+   206→Acceptance gate: at least one response is actually fetched and persisted in the configured environment, with a verifiable timestamp and source metadata; otherwise the feature must remain labelled fixture/unavailable. Correct units/timezone and forecast/past separation are covered by tests.
+   207→```
+   208→
+   209→## Prompt 5 — BMD CAP discovery, normalization, warning history, and conflict handling
+   210→
+   211→```text
+   212→Implement Phase 5 only: BMD CAP discovery and warning display.
+   213→
+   214→Build two bounded discovery adapters: (1) `https://cap.bmd.gov.bd/api/cap/rss.xml`; (2) the public index at `https://cap.bmd.gov.bd/bmd-cap-alerts/`. Parse only the XML links actually discovered/published by those sources. Include a permissioned manual import flow limited to approved BMD URLs or reviewed uploads; validate file size, content type and XML safely. Avoid insecure XML entity expansion/external entity processing.
+   215→
+   216→Parse CAP 1.2 fields: identifier, sender, sent, status, messageType, references, info blocks, effective, onset, expires, headline/description/instruction where present, and polygon/circle/geocode areas. Preserve original text and XML-derived times. Normalize CAP latitude/longitude pairs to valid GeoJSON longitude/latitude and validate coordinate ranges/rings. Store original and normalized geometry, source URL, retrieval timestamp, raw asset hash, revision/update/cancel references, and parser version. De-duplicate by identifier/revision and make reruns idempotent. Handle updates/cancellations as revisions without deleting historical records.
+   217→
+   218→For the known supplied-plan 5 July example, preserve the XML window (effective 5 July 07:00 UTC; expiry 6 July 07:00 UTC) separately from the text-described 72-hour period starting 5 July 13:00 Bangladesh time. Show “validity conflict — human review required.” Do not extend XML expiry automatically. Only include this example if its XML/source artifact has actually been imported and hash/provenance recorded; otherwise create a parser test fixture explicitly labelled fixture.
+   219→
+   220→The UI should show publisher, sent/effective/onset/expiry in local display time with UTC source timestamps accessible, original publisher wording, source link, affected geometry match confidence/status, update/cancel state, and a freshness badge. Keep the BMD banner visible independently from screening status and other feed failures. If no active bulletin is found, say “No active bulletin returned by this source at last check,” not “safe.”
+   221→
+   222→Add tests for malformed XML, missing time fields, update/cancel linking, deduplication, coordinate-order conversion, polygon validation, timezone display and expiry/text conflict. Keep large feed fetching bounded; queue heavy normalization to a Python job if needed.
+   223→
+   224→Acceptance gate: a real source is fetched or manual import is validated with recorded provenance; parsed warnings are persisted and rendered; replay fixtures are labelled; time conflicts are not silently reconciled.
+   225→```
+   226→
+   227→## Prompt 6 — Jobs system, scheduled dispatch, and worker recovery
+   228→
+   229→```text
+   230→Implement Phase 6 only: durable asynchronous jobs and cloud scheduling. Do not run heavy Earth Engine/raster/PDF processing inside the browser or Supabase Edge Functions.
+   231→
+   232→Use the single `jobs` table created earlier. Implement a safe job lifecycle with idempotency key, queued/running/completed/failed states, attempt count, `lease_until`, worker identity, heartbeat, created/started/completed timestamps, provider/task IDs, bounded error summary and result metadata. Job claim/lease must be atomic so two workers cannot process one item concurrently. Expired leases become retryable according to a bounded policy; poison jobs stop after configured attempts and show actionable diagnostics. Keep audit-friendly events.
+   233→
+   234→Create thin server-side functions with responsibilities matching the plan:
+   235→- `refresh-weather`: authorize/scheduler-check, create a due idempotent job or call a bounded light fetch if appropriate.
+   236→- `discover-bmd`: bounded feed discovery and queue heavy parsing if needed.
+   237→- `dispatch-job`: verify scheduler secret/authorization and dispatch only allowlisted job types to a GitHub Actions workflow using server-side secrets.
+   238→- `source-health`: return sanitized source state/freshness metadata for authorized UI use.
+   239→- `request-report`: check reviewer role and case revision, then queue a report job.
+   240→- `get-download`: authorize access to a specific report version and issue a short-lived signed URL or stream it safely.
+   241→- `review-case`: validate JWT, role, expected case revision and requested transition; write append-only review history.
+   242→
+   243→Create Python 3.12 worker scaffolding and GitHub Actions workflow(s) with least-privilege permissions, concurrency controls, bounded runtime, explicit environment, safe logs, deterministic input/output manifests and exit codes. Include handlers/adapters for forecast persistence, NASA rainfall processing, Earth Engine imagery/analysis and report rendering as separate job types, even if some adapters must initially return a clear `unavailable` result until credentials/access are confirmed. Do not fabricate success. Authenticate service-to-service requests using GitHub/Supabase secrets stored in platform settings; never place secrets in repository or output logs.
+   244→
+   245→Scheduling: Supabase Cron + pg_net creates/dispatches hourly forecast/rainfall/BMD due jobs and daily imagery jobs, adjusted to verified quota. Add an off-peak Actions backup schedule and a watchdog for missing heartbeats. Avoid duplicate schedules doing the same full workload; use idempotency keys/watermarks and process only new assets. Provide manual admin “run now” only through authorized server logic.
+   246→
+   247→Acceptance gate: demonstrate two scheduled/manual runs persisting records without duplicates; simulate provider failure and expired worker lease and show visible retry/failure state; prove a viewer cannot dispatch jobs; show actual workflow run IDs/heartbeats. If platform settings remain incomplete, report the unpassed gate explicitly.
+   248→```
+   249→
+   250→## Prompt 7 — NASA IMERG rainfall ingestion and completeness-aware accumulation
+   251→
+   252→```text
+   253→Implement Phase 7 only: NASA IMERG Early V07 rainfall adapter and validated accumulation logic. Do not treat forecast precipitation as an observation and do not silently substitute GSMaP.
+   254→
+   255→Primary source: NASA IMERG Early V07, using the plan's specified short name `GPM_3IMERGHE`. Resolve it through NASA CMR by short name and version, and record the actual returned collection ID and metadata. If the live CMR response indicates that the current canonical short name or version differs, log the discrepancy and verify the product against NASA documentation before adopting it; do not silently substitute a similarly named product. Do not hard-code the observed CMR collection ID from the plan. Use authenticated Earthdata/earthaccess in the Python worker.
+   256→
+   257→Before parsing any downloaded file, inspect and record real metadata: format, variable/band name, array dimensions, fill/missing values, units, time interval, whether data is a rate or accumulation, grid, projection and scale. Reject unknown/unsupported files. Validate half-hour rates as rate × 0.5 hours in mm; do not multiply an already accumulated amount again. Convert fill values to missing—not zero. Validate geographic index/grid mapping for site cells and persist exact source granule/ID, interval endpoints, retrieval time, units, QA, parser version, and hash.
+   258→
+   259→Use a stored watermark to process only new granules and backfill gaps. Save cropped analysis inputs/manifests rather than permanent global archives. Show roughly 0.1-degree (~10 km) cell granularity and mountainous-terrain uncertainty. Multiple hills may share one cell; don't imply hill-scale rain measurement. GSMaP `JAXA/GPM_L3/GSMaP/v8/operational` is a separate adapter for cross-check/replay after verifying band and provisional status; its records must remain distinguishable from IMERG.
+   260→
+   261→Implement complete past 24/48/72-hour and five-day windows using the latest contiguous valid end time D. For half-hour data require 48/96/144/240 intervals. A gap makes the window incomplete and it must not output a normal total without an incomplete badge and gap list. Never fill gaps with zeros. No overlapping-window double count. Forecast and observed/estimated inputs are separated by type.
+   262→
+   263→Tests must cover rate versus accumulation, mm vs other units, fill values, missing intervals, duplicates, overlap, timezone boundaries, watermark backfill, differing IMERG/GSMaP identity and a representative real file fixture with metadata. Keep an archive of non-sensitive parser test fixtures only where licence permits.
+   264→
+   265→Acceptance gate: the exact CMR product/version and real file schema are verified; at least one authenticated granule is parsed and its interval/units are cross-checked against metadata; a second run has no duplicate intervals; totals and completeness behave correctly. If access is unavailable, mark the source as unavailable and do not claim live rainfall ingestion.
+   266→```
+   267→
+   268→## Prompt 8 — Earth Engine imagery and CutWatch disturbance evidence
+   269→
+   270→```text
+   271→Implement Phase 8 only: the Python Earth Engine imagery adapter and transparent CutWatch spectral analysis pipeline. This phase must process only verified study geometries and authorized data.
+   272→
+   273→Preflight:
+   274→- Use one registered Earth Engine project and documented server-side credentials.
+   275→- Confirm each site geometry, boundary source/version, coordinate system and analysis extent before submitting exports.
+   276→- Query actual collections `COPERNICUS/S2_SR_HARMONIZED`, `GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED`, `GOOGLE/DYNAMICWORLD/V1`, and `COPERNICUS/DEM/GLO30_2024_1`; retain collection and asset/task IDs.
+   277→- Confirm the DEM catalog band and projection in a real response; mosaic the DEM `DEM` band and set an appropriate native/default projection before slope calculation. Preserve ~30 m terrain-data limitations.
+   278→
+   279→Imagery QA and comparison:
+   280→1. Choose comparable before/after short windows; use same-season comparisons when appropriate. Keep acquisition dates and rationale visible.
+   281→2. Join Cloud Score+ by matching assets/keys, use `cs_cdf >= 0.60` as a documented development setting, and tune on development sites only. Missing Cloud Score+ means insufficient quality input—not “all pixels valid.”
+   282→3. Mask cloud/shadow, calculate common valid coverage over both periods, reject bad registration/major seasonal mismatch, and require a configurable initial 60% common coverage gate.
+   283→4. Compute NDVI change and a documented bare-soil index change. Respect band resolution: Sentinel-2 10 m products differ from indices using 20 m bands even if resampled for display.
+   284→5. Include Dynamic World tree/bare/built probability changes only where matching assets exist. Identify it as derived from Sentinel-2, not a separate sensor. If absent, label “spectral baseline; AI corroboration unavailable.”
+   285→6. Restrict candidates to verified hill geometry; show terrain slope/relief as context and describe illumination/shadow confounders.
+   286→7. Group candidate pixels to polygons, using 0.1 ha only as a tunable minimum area heuristic. Record rejected smaller detections for evaluation if practical.
+   287→8. Persist source asset IDs, time ranges, common coverage, nodata method, index formulas, threshold/config version, approximate area in an appropriate projected CRS after checking extent (UTM 46N/EPSG:32646 is a candidate for Chattogram), and uncertainty/limitations. WGS84 is the exchange CRS; Web Mercator is display-only.
+   288→9. Export actual small imagery chips/rasters and manifests to private storage. Do not rely on expiring Earth Engine map URLs as archived evidence and do not scrape Google Earth imagery.
+   289→
+   290→For each case candidate, provide before/after view and transparent evidence: imagery dates, valid coverage, index delta summary, area method, terrain context, source links/hashes and QA state. Distinguish vegetation clearance, construction, seasonality, shadow/artifact and landslide scar as human-review possibilities, not automated conclusions.
+   291→
+   292→Tests: missing quality asset, cloud masking, nodata/alignment, minimum common coverage, bad pair rejection, correct projection/area measurement, DEM band/slope, no Dynamic World fallback, retryable export tasks and duplicate-export prevention. Tune settings on development sites and freeze configuration before held-out testing.
+   293→
+   294→Acceptance gate: one real, verified-site before/after pair has successfully exported and persisted with full manifest and QA; at least one candidate or a justified “no candidate under these settings” result is visible. A screenshot or static map alone does not pass.
+   295→```
+   296→
+   297→## Prompt 9 — Transparent screening rules, preparedness separation, and human case review
+   298→
+   299→```text
+   300→Implement Phase 9 only: explainable rule-based screening and authorized case review. Do not build a trained landslide predictor.
+   301→
+   302→Implement a versioned/configurable rule engine with exactly these high-level states:
+   303→- `insufficient_data`: required imagery/weather input fails completeness/quality gates. Display gaps and never treat missing rain as zero.
+   304→- `monitor`: inputs are adequate but no configured trigger is crossed. This is not a safety declaration.
+   305→- `review`: suspected disturbance, applicable BMD warning, or a documented, enabled rainfall comparison trigger warrants inspection.
+   306→- `priority_review_suggested`: a reviewed and explicitly enabled rule suggests elevated attention; the human reviewer still confirms/rejects the recommendation.
+   307→
+   308→A BMD banner must be rendered independently in every state, including insufficient-data and monitor. Rainfall exceeding a comparator never establishes a cut; a cut candidate never automatically modifies rainfall thresholds. Store the exact input cutoff, completeness, comparator/source, units, rule version, warnings and reason codes for every assessment. Do not call any of these states a landslide probability. If showing YPSA's published 100–120 mm/24h research trigger, include the citation/source/context and label it “research comparison—not locally calibrated for this satellite grid.” All additional threshold candidates remain disabled until their primary definitions, measurement endpoints and context are verified.
+   309→
+   310→Review workflow:
+   311→- Allowed case states: candidate → under review → rejected OR field verification requested → reviewed → optionally field corroborated. Implement explicit permitted transitions and explain why a transition is disallowed.
+   312→- Only reviewer/admin roles may perform applicable review transitions; field contributors only submit permissioned evidence for assigned cases; viewer/judge is read-only.
+   313→- Each review action captures reviewer identity, timestamp, expected case revision, action, reason/rationale and relevant evidence references. Append history; do not overwrite earlier decisions.
+   314→- Use optimistic concurrency: if the expected revision is stale, reject the update and show the current revision rather than overwriting another reviewer's decision.
+   315→- “Permit status” and “jurisdiction” must support verified / unverified / not checked plus source and checked date. Never infer permit status from a spectral result.
+   316→- Enforcement and preparedness are separate workflows/views and distinct records. No public registry of households, automatic summons/eviction actions, or unsupervised operational voice broadcast.
+   317→
+   318→Build review UI with side-by-side imagery, date/coverage/source context, rainfall and forecast windows, BMD banner, boundary/jurisdiction/permit states, rule reasons, uncertainty, reviewer notes and clear buttons for each allowed transition. Ask for a rationale on rejection, field verification request, or final decision. Notify relevant in-app roles without duplicates.
+   319→
+
+[showing lines 20-319 of 492; use offset=320 with limit to continue reading]

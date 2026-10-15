@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PaharPahara placeholder Sentinel-2 SR chip — Nagin Hill BEFORE. Stylized SVG, NOT real imagery.
+     Forested hill with twin peaks, dark green canopy, within Forest Department jurisdiction.
+     Palette: dark forest oklch(0.40 0.10 150)->oklch(0.55 0.10 145), bare oklch(0.55 0.13 35), text oklch(0.20 0 0). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-labelledby="t5 d5">
+  <title id="t5">Nagin Hill — Before — Sentinel-2 SR 2026-05-11 — HISTORICAL REPLAY placeholder chip</title>
+  <desc id="d5">Stylized SVG placeholder Sentinel-2 SR chip showing Nagin Hill, Chattogram, forested with a dark green canopy within Forest Department jurisdiction on 2026-05-11. Not real satellite imagery.</desc>
+
+  <defs>
+    <!-- darker forest gradient for Nagin: oklch(0.55 0.10 145) -> oklch(0.40 0.10 150) -->
+    <linearGradient id="forest-n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#4a9c4c"/>
+      <stop offset="55%" stop-color="#2f7a3c"/>
+      <stop offset="100%" stop-color="#1f5d2c"/>
+    </linearGradient>
+    <clipPath id="hill-clip-n">
+      <path d="M 90 520 C 160 490 220 440 270 390 C 305 350 340 340 380 350 C 420 360 450 360 480 348 C 515 333 560 333 600 350 C 650 375 710 440 750 520 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background sky -->
+  <rect x="0" y="0" width="800" height="600" fill="#eef3ef"/>
+
+  <!-- Title bar -->
+  <rect x="0" y="0" width="800" height="76" fill="#000000" opacity="0.78"/>
+  <text x="20" y="27" fill="#ffffff" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700">Nagin Hill — Before</text>
+  <text x="20" y="49" fill="#cfe8d6" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13">Sentinel-2 SR • 2026-05-11</text>
+  <text x="20" y="67" fill="#ffe08a" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600">HISTORICAL REPLAY — placeholder chip</text>
+
+  <!-- North arrow -->
+  <g>
+    <polygon points="754,10 766,42 758,42 758,56 750,56 750,42 742,42" fill="#ffffff"/>
+    <text x="754" y="71" text-anchor="middle" fill="#ffffff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700">N</text>
+  </g>
+
+  <!-- Forest Department jurisdiction boundary (dashed orange rect) -->
+  <rect x="60" y="300" width="720" height="240" fill="none" stroke="#d68910" stroke-width="1.6" stroke-dasharray="10 4 2 4"/>
+  <g>
+    <rect x="64" y="282" width="220" height="20" fill="#d68910" opacity="0.85"/>
+    <text x="174" y="296" text-anchor="middle" fill="#ffffff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700">Forest Dept. Jurisdiction</text>
+  </g>
+
+  <!-- Nagin Hill: twin-peak forested hill, dark canopy -->
+  <g>
+    <path d="M 90 520 C 160 490 220 440 270 390 C 305 350 340 340 380 350 C 420 360 450 360 480 348 C 515 333 560 333 600 350 C 650 375 710 440 750 520 Z" fill="url(#forest-n)"/>
+    <g clip-path="url(#hill-clip-n)">
+      <!-- contour lines -->
+      <path d="M 70 510 C 170 478 240 432 290 392 C 330 360 380 348 460 350 C 530 352 600 372 680 440 C 720 472 750 498 770 510" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.60"/>
+      <path d="M 70 488 C 170 458 240 416 295 380 C 335 354 380 344 460 348 C 530 352 600 366 680 420 C 720 452 750 478 770 488" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.55"/>
+      <path d="M 90 462 C 180 432 250 398 300 366 C 340 344 380 336 460 340 C 530 344 600 354 680 400 C 720 432 750 458 770 462" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.50"/>
+      <path d="M 130 432 C 210 408 260 380 308 354 C 345 336 380 330 460 334 C 530 338 600 344 680 380 C 720 410 750 432 770 432" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.42"/>
+      <!-- dark canopy dots -->
+      <circle cx="220" cy="450" r="10" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="270" cy="410" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="330" cy="372" r="10" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="390" cy="355" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="450" cy="350" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="510" cy="345" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="570" cy="358" r="10" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="620" cy="380" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="670" cy="425" r="10" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="180" cy="488" r="8" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="240" cy="478" r="9" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="490" cy="385" r="9" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="555" cy="395" r="8" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="640" cy="460" r="9" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="710" cy="495" r="7" fill="#2f7a3c" opacity="0.50"/>
+      <!-- denser mid-canopy overlay -->
+      <circle cx="300" cy="425" r="6" fill="#143d1d" opacity="0.45"/>
+      <circle cx="425" cy="378" r="6" fill="#143d1d" opacity="0.45"/>
+      <circle cx="535" cy="375" r="6" fill="#143d1d" opacity="0.45"/>
+      <circle cx="610" cy="415" r="6" fill="#143d1d" opacity="0.45"/>
+    </g>
+  </g>
+
+  <!-- Ground baseline -->
+  <rect x="0" y="520" width="800" height="80" fill="#d7e3da"/>
+  <line x1="0" y1="520" x2="800" y2="520" stroke="#a8c2a8" stroke-width="1"/>
+
+  <!-- Scale bar bottom-right -->
+  <g>
+    <rect x="650" y="558" width="100" height="6" fill="#222222"/>
+    <rect x="650" y="558" width="50"  height="6" fill="#ffffff"/>
+    <rect x="650" y="558" width="100" height="6" fill="none" stroke="#222222" stroke-width="1"/>
+    <text x="700" y="582" text-anchor="middle" fill="#222222" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600">100 m</text>
+  </g>
+
+  <!-- Footer caption -->
+  <text x="20" y="572" fill="#333333" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-style="italic">Stylized placeholder — not actual Sentinel-2 imagery</text>
+</svg>

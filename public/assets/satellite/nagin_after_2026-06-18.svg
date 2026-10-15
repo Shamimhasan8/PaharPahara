@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PaharPahara placeholder Sentinel-2 SR chip — Nagin Hill AFTER (large clearance, field-corroborated).
+     Same hill with large reddish-brown cleared patch (>2 ha). Stylized SVG, NOT real imagery.
+     Palette: dark forest oklch(0.40 0.10 150)->oklch(0.55 0.10 145), bare oklch(0.55 0.13 35), text oklch(0.20 0 0). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-labelledby="t6 d6">
+  <title id="t6">Nagin Hill — After — Sentinel-2 SR 2026-06-18 — HISTORICAL REPLAY placeholder chip • field-corroborated 2026-06-27</title>
+  <desc id="d6">Stylized SVG placeholder Sentinel-2 SR chip showing Nagin Hill, Chattogram, with a large reddish-brown cleared patch (>2 ha) on the south face on 2026-06-18, field-corroborated 2026-06-27. Not real satellite imagery.</desc>
+
+  <defs>
+    <linearGradient id="forest-n2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#4a9c4c"/>
+      <stop offset="55%" stop-color="#2f7a3c"/>
+      <stop offset="100%" stop-color="#1f5d2c"/>
+    </linearGradient>
+    <pattern id="hatch-n2" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="7" stroke="#7a1e10" stroke-width="1.3" opacity="0.85"/>
+    </pattern>
+    <clipPath id="hill-clip-n2">
+      <path d="M 90 520 C 160 490 220 440 270 390 C 305 350 340 340 380 350 C 420 360 450 360 480 348 C 515 333 560 333 600 350 C 650 375 710 440 750 520 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background sky -->
+  <rect x="0" y="0" width="800" height="600" fill="#eef3ef"/>
+
+  <!-- Forest Department jurisdiction boundary -->
+  <rect x="60" y="300" width="720" height="240" fill="none" stroke="#d68910" stroke-width="1.6" stroke-dasharray="10 4 2 4"/>
+  <g>
+    <rect x="64" y="282" width="220" height="20" fill="#d68910" opacity="0.85"/>
+    <text x="174" y="296" text-anchor="middle" fill="#ffffff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700">Forest Dept. Jurisdiction</text>
+  </g>
+
+  <!-- Nagin Hill (same shape as before) -->
+  <g>
+    <path d="M 90 520 C 160 490 220 440 270 390 C 305 350 340 340 380 350 C 420 360 450 360 480 348 C 515 333 560 333 600 350 C 650 375 710 440 750 520 Z" fill="url(#forest-n2)"/>
+    <g clip-path="url(#hill-clip-n2)">
+      <path d="M 70 510 C 170 478 240 432 290 392 C 330 360 380 348 460 350 C 530 352 600 372 680 440 C 720 472 750 498 770 510" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.60"/>
+      <path d="M 70 488 C 170 458 240 416 295 380 C 335 354 380 344 460 348 C 530 352 600 366 680 420 C 720 452 750 478 770 488" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.55"/>
+      <path d="M 90 462 C 180 432 250 398 300 366 C 340 344 380 336 460 340 C 530 344 600 354 680 400 C 720 432 750 458 770 462" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.50"/>
+      <path d="M 130 432 C 210 408 260 380 308 354 C 345 336 380 330 460 334 C 530 338 600 344 680 380 C 720 410 750 432 770 432" fill="none" stroke="#143d1d" stroke-width="1.1" stroke-dasharray="3 4" opacity="0.42"/>
+      <!-- dark canopy dots (skipping the cleared south-face area) -->
+      <circle cx="220" cy="450" r="10" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="270" cy="410" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="330" cy="372" r="10" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="390" cy="355" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="620" cy="380" r="11" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="670" cy="425" r="10" fill="#1f5d2c" opacity="0.65"/>
+      <circle cx="180" cy="488" r="8" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="240" cy="478" r="9" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="640" cy="460" r="9" fill="#2f7a3c" opacity="0.55"/>
+      <circle cx="710" cy="495" r="7" fill="#2f7a3c" opacity="0.50"/>
+      <circle cx="300" cy="425" r="6" fill="#143d1d" opacity="0.45"/>
+      <circle cx="610" cy="415" r="6" fill="#143d1d" opacity="0.45"/>
+    </g>
+  </g>
+
+  <!-- Large cleared patch on south face (>2 ha) — bare oklch(0.55 0.13 35) -->
+  <g>
+    <polygon points="340,460 380,410 470,395 580,410 620,450 610,500 540,512 400,512" fill="#c47a4c" opacity="0.96"/>
+    <!-- inner scar / fresh-exposure streaks -->
+    <polygon points="380,455 425,420 510,410 575,425 595,460 555,495 460,498 395,485" fill="#9c5a30" opacity="0.55"/>
+    <polygon points="430,475 475,448 540,442 580,460 555,485 490,492 440,488" fill="#e09a5e" opacity="0.45"/>
+    <!-- hatched outline overlay -->
+    <polygon points="340,460 380,410 470,395 580,410 620,450 610,500 540,512 400,512" fill="url(#hatch-n2)" stroke="#7a1e10" stroke-width="2.2" stroke-dasharray="5 3"/>
+  </g>
+
+  <!-- Ground baseline -->
+  <rect x="0" y="520" width="800" height="80" fill="#d7e3da"/>
+  <line x1="0" y1="520" x2="800" y2="520" stroke="#a8c2a8" stroke-width="1"/>
+
+  <!-- Title bar (drawn last to sit on top) -->
+  <rect x="0" y="0" width="800" height="76" fill="#000000" opacity="0.78"/>
+  <text x="20" y="27" fill="#ffffff" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700">Nagin Hill — After</text>
+  <text x="20" y="49" fill="#cfe8d6" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="13">Sentinel-2 SR • 2026-06-18</text>
+  <text x="20" y="67" fill="#ffe08a" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600">HISTORICAL REPLAY — placeholder chip</text>
+
+  <!-- North arrow -->
+  <g>
+    <polygon points="754,10 766,42 758,42 758,56 750,56 750,42 742,42" fill="#ffffff"/>
+    <text x="754" y="71" text-anchor="middle" fill="#ffffff" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700">N</text>
+  </g>
+
+  <!-- Cleared-patch label pill (field-corroborated) -->
+  <g>
+    <rect x="190" y="528" width="430" height="22" fill="#ffffff" opacity="0.94" rx="3"/>
+    <text x="405" y="543" text-anchor="middle" fill="#7a1e10" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700">Δ NDVI -0.34 • Δ bare +0.52 • 2.18 ha • field-corroborated 2026-06-27</text>
+  </g>
+
+  <!-- Scale bar bottom-right -->
+  <g>
+    <rect x="650" y="558" width="100" height="6" fill="#222222"/>
+    <rect x="650" y="558" width="50"  height="6" fill="#ffffff"/>
+    <rect x="650" y="558" width="100" height="6" fill="none" stroke="#222222" stroke-width="1"/>
+    <text x="700" y="582" text-anchor="middle" fill="#222222" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="600">100 m</text>
+  </g>
+
+  <!-- Footer caption -->
+  <text x="20" y="572" fill="#333333" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-style="italic">Stylized placeholder — not actual Sentinel-2 imagery</text>
+</svg>
