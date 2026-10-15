@@ -360,3 +360,83 @@ Rounds 1-3 established a fully functional prototype with case review workflow, b
 8. **Notifications settings**: Let users choose which notification categories they receive (case, bmd, source, job, report).
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 5 — webDevReview (cron job 461689, 2026-10-16 00:30 BST)
+
+### Current project status description / assessment
+Rounds 1-4 established a fully functional prototype with case review workflow, bilingual reports, command palette, audit log, expandable sources, case + site comparison, keyboard shortcuts, report version diff, case lifecycle timeline, and bookmarkable URL hash. Server healthy (HTTP 200, no console errors). This round focused on (a) fixing the Round 4 minor items and (b) adding 4 new features: bulk case actions, case date-range filter, dashboard JSON export, and notification category settings.
+
+### Completed modifications / verification results
+
+**Fix 1: Site URL hash callback**
+- `SitesView` now accepts `onSelectedChange` callback, wired through `DashboardRouter` to Home's `selectedSiteSlug` state.
+- Selecting a site (from map or list) now updates the URL hash to `#tab=sites&site=<slug>`.
+- Back button on SiteDetail calls `handleSelect(null)` to clear the selection + hash.
+- Verified: site selection syncs to URL hash.
+
+**New feature: Bulk case actions**
+- New `/api/cases/bulk-review` endpoint: accepts `caseIds[]`, `decision`, `rationale`, `permitStatus`, `nextAction`. Validates each case individually (revision + transition); failures don't abort the batch. Max 20 cases per bulk operation. Writes `case_reviewed_bulk` audit log entry.
+- `CasesView` now has a "Bulk select" toggle button (visible only for roles with `review_case` capability). Clicking it enters bulk mode:
+  - Checkboxes appear next to each case card.
+  - Header shows "N selected" badge + "Select all" + "Apply bulk action" + "Exit" buttons.
+  - Clicking "Apply bulk action" opens the `BulkActionDialog`.
+- `BulkActionDialog` component:
+  - Shows preview of selected cases (caseKey + status).
+  - Determines dominant status among selected cases and shows allowed decisions for that status.
+  - Decision dropdown, permit status, rationale (applies to all), next action.
+  - On submit: calls `/api/cases/bulk-review`, shows toast with succeeded/failed counts, clears selection + reloads.
+  - If no decisions are allowed for the dominant status, shows a message instead of the form.
+- Verified: bulk select mode shows checkboxes, "Select all" works, "Apply bulk action" button is disabled when 0 selected.
+
+**New feature: Case date-range filter**
+- Added "Detected" date range filter to the Cases view with two `<input type="date">` pickers (From → To) and a clear (X) button.
+- Filters cases by `detectedAt` against the selected range (inclusive).
+- Combines with the existing status filter pills + text search.
+- Verified: date range pickers visible, clear button appears when dates are set.
+
+**New feature: Dashboard JSON export**
+- New `/api/dashboard/export` endpoint: returns the full dashboard JSON as a downloadable file (`paharpahara-dashboard-<timestamp>.json`) with `Content-Disposition: attachment`.
+- Added "Export" button (Download icon) to the dashboard header, next to the Live/Activity indicators.
+- Clicking it opens the JSON download in a new tab.
+- Verified: Export button visible in dashboard header.
+
+**New feature: Notification category settings**
+- New `/api/notifications/settings` endpoint (returns default settings; client-side localStorage overrides for the prototype).
+- `NotificationsView` now has:
+  - "Filter" toggle button in the header that shows/hides a settings card.
+  - Settings card with 5 category switches: Case events, BMD alerts, Source health, Job status, Reports.
+  - Settings persisted to `localStorage` (`pp-notif-settings`).
+  - Notifications list filters by enabled categories.
+  - Header shows "N unread / M shown · K total" to clarify the filter effect.
+  - Empty state distinguishes between "no notifications at all" and "no notifications match your filter".
+- Verified: Filter panel shows 5 switches, toggling a switch hides that category's notifications.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Dashboard Export button visible in header.
+  - ✓ Cases view: date range pickers + Bulk select button visible.
+  - ✓ Bulk mode: checkboxes appear, "Select all" + "Apply bulk action" work.
+  - ✓ Notifications view: Filter panel with 5 category switches.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Bulk action dialog doesn't show per-case results**: After applying, the toast shows aggregate counts but not which specific cases failed. Could add a results breakdown dialog.
+2. **Notification settings are client-side only**: For the prototype, settings are in localStorage. A production version would persist to the User table.
+3. **Date range filter uses UTC**: The date pickers compare against `detectedAt` in UTC; users in BST might see off-by-one at midnight. Could add timezone handling.
+
+**Recommended next-phase work:**
+1. **WebSocket live updates**: Replace 60s polling with a socket.io mini-service for real-time BMD alerts / job completions.
+2. **Source adapter health sparklines**: Track access-state changes over time and show a mini sparkline per adapter.
+3. **Print stylesheet extraction**: Move inline printable-report CSS to a shared stylesheet.
+4. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+5. **Case timeline mobile stacking**: The 5-stage horizontal timeline could stack vertically on mobile.
+6. **Report diff drawer "show full"**: Add expand for truncated object values.
+7. **Dashboard data import**: Let users import a JSON file to restore a previous dashboard state.
+8. **Activity feed widget**: A real-time feed of all system events (case opened, job completed, BMD alert) on the dashboard.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

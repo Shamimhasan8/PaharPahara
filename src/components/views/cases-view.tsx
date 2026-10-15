@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers, Search, X, Link2 } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers, Search, X, Link2, Calendar, CheckSquare, Zap } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { CaseDTO, DashboardDataDTO, Role } from '@/lib/types/dto'
@@ -44,6 +45,11 @@ export function CasesView({ data, lang, role, reload, initialSelectedId, onSelec
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null)
   const [filter, setFilter] = useState<StatusFilter>('active')
   const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
+  const [bulkMode, setBulkMode] = useState(false)
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set())
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false)
 
   // Notify parent when selection changes (for URL hash sync)
   const handleSelect = useCallback((id: string | null) => {
@@ -67,7 +73,33 @@ export function CasesView({ data, lang, role, reload, initialSelectedId, onSelec
       c.disturbanceType?.toLowerCase().includes(q) ||
       c.status.toLowerCase().includes(q)
     )
+  }).filter((c) => {
+    // Date range filter on detectedAt
+    const d = new Date(c.detectedAt)
+    if (dateFrom && d < new Date(dateFrom + 'T00:00:00Z')) return false
+    if (dateTo && d > new Date(dateTo + 'T23:59:59Z')) return false
+    return true
   })
+
+  const canReview = can(role, 'review_case')
+
+  const toggleBulk = (id: string) => {
+    setBulkSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectAllFiltered = () => {
+    setBulkSelected(new Set(filteredCases.map((c) => c.id)))
+  }
+
+  const clearBulk = () => {
+    setBulkSelected(new Set())
+    setBulkMode(false)
+  }
 
   if (selected) {
     return <CaseDetail c={selected} lang={lang} role={role} onBack={() => handleSelect(null)} reload={reload} sources={data.sources} />
@@ -131,6 +163,87 @@ export function CasesView({ data, lang, role, reload, initialSelectedId, onSelec
         </div>
       </div>
 
+      {/* Date range + bulk mode controls */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          <span lang={lang}>{lang === 'en' ? 'Detected' : 'সনাক্তকরণ'}:</span>
+        </div>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="h-8 px-2 text-xs rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          aria-label={lang === 'en' ? 'From date' : 'শুরু তারিখ'}
+        />
+        <span className="text-xs text-muted-foreground">→</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="h-8 px-2 text-xs rounded-md border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          aria-label={lang === 'en' ? 'To date' : 'শেষ তারিখ'}
+        />
+        {(dateFrom || dateTo) && (
+          <button
+            onClick={() => { setDateFrom(''); setDateTo('') }}
+            className="text-xs text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+        <div className="flex-1" />
+        {canReview && (
+          <>
+            {!bulkMode ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkMode(true)}
+                className="h-8 text-xs gap-1.5"
+              >
+                <CheckSquare className="h-3.5 w-3.5" />
+                <span lang={lang}>{lang === 'en' ? 'Bulk select' : 'বাল্ক নির্বাচন'}</span>
+              </Button>
+            ) : (
+              <>
+                <Badge variant="outline" className="text-[10px] gap-1.5">
+                  <CheckSquare className="h-3 w-3" />
+                  {bulkSelected.size} {lang === 'en' ? 'selected' : 'নির্বাচিত'}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={selectAllFiltered}
+                  className="h-8 text-xs"
+                  disabled={filteredCases.length === 0}
+                >
+                  {lang === 'en' ? 'Select all' : 'সব নির্বাচন'}
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setBulkDialogOpen(true)}
+                  className="h-8 text-xs gap-1.5"
+                  disabled={bulkSelected.size === 0}
+                >
+                  <Zap className="h-3.5 w-3.5" />
+                  {lang === 'en' ? 'Apply bulk action' : 'বাল্ক কর্ম প্রয়োগ'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearBulk}
+                  className="h-8 text-xs"
+                >
+                  {lang === 'en' ? 'Exit' : 'প্রস্থান'}
+                </Button>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
@@ -142,13 +255,26 @@ export function CasesView({ data, lang, role, reload, initialSelectedId, onSelec
                 {lang === 'en' ? 'No cases match this filter.' : 'এই ফিল্টারে কোনো কেস নেই।'}
               </div>
             ) : (
-              filteredCases.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => handleSelect(c.id)}
-                  className="w-full text-left p-2.5 rounded-lg border border-border bg-card hover:bg-muted/50 hover:border-primary/50 transition-colors group"
-                >
-                  <div className="flex items-start justify-between gap-2">
+              filteredCases.map((c) => {
+                const isBulkSel = bulkSelected.has(c.id)
+                return (
+                  <div
+                    key={c.id}
+                    className={`w-full text-left p-2.5 rounded-lg border transition-colors group flex items-start gap-2 ${
+                      bulkMode && isBulkSel
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-card hover:bg-muted/50 hover:border-primary/50'
+                    } ${bulkMode ? 'cursor-pointer' : ''}`}
+                    onClick={bulkMode ? () => toggleBulk(c.id) : () => handleSelect(c.id)}
+                  >
+                    {bulkMode && (
+                      <Checkbox
+                        checked={isBulkSel}
+                        onCheckedChange={() => toggleBulk(c.id)}
+                        className="mt-1 shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="font-mono text-[11px] font-semibold group-hover:text-primary">{c.caseKey}</div>
                       <div className="text-xs text-muted-foreground truncate" lang={lang}>
@@ -160,8 +286,8 @@ export function CasesView({ data, lang, role, reload, initialSelectedId, onSelec
                     </div>
                     <CaseStatusBadge status={c.status} lang={lang} />
                   </div>
-                </button>
-              ))
+                )
+              })
             )}
           </CardContent>
         </Card>
@@ -174,6 +300,221 @@ export function CasesView({ data, lang, role, reload, initialSelectedId, onSelec
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Bulk action dialog */}
+      {bulkDialogOpen && (
+        <BulkActionDialog
+          caseIds={Array.from(bulkSelected)}
+          cases={data.cases.filter((c) => bulkSelected.has(c.id))}
+          lang={lang}
+          onClose={() => setBulkDialogOpen(false)}
+          onSuccess={() => {
+            setBulkDialogOpen(false)
+            clearBulk()
+            reload()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Bulk action dialog — applies the same decision to multiple cases.
+function BulkActionDialog({
+  caseIds,
+  cases,
+  lang,
+  onClose,
+  onSuccess,
+}: {
+  caseIds: string[]
+  cases: CaseDTO[]
+  lang: Lang
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const t = dict[lang]
+  const [decision, setDecision] = useState('')
+  const [rationale, setRationale] = useState('')
+  const [permitStatus, setPermitStatus] = useState('unverified')
+  const [nextAction, setNextAction] = useState('')
+
+  const bulkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/cases/bulk-review', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ caseIds, decision, rationale, permitStatus, nextAction }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'failed')
+      }
+      return res.json()
+    },
+    onSuccess: (data: { succeeded: number; failed: number }) => {
+      toast.success(
+        lang === 'en'
+          ? `Bulk action applied: ${data.succeeded} succeeded, ${data.failed} failed`
+          : `বাল্ক কর্ম প্রয়োগ: ${data.succeeded} সফল, ${data.failed} ব্যর্থ`,
+      )
+      onSuccess()
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+
+  const onSubmit = () => {
+    if (!decision || !rationale.trim()) {
+      toast.error(lang === 'en' ? 'Select a decision and provide rationale' : 'সিদ্ধান্ত ও যৌক্তিকতা দিন')
+      return
+    }
+    bulkMutation.mutate()
+  }
+
+  // Show available decisions based on the most common status among selected cases
+  const statusCounts: Record<string, number> = {}
+  for (const c of cases) statusCounts[c.status] = (statusCounts[c.status] ?? 0) + 1
+  const dominantStatus = Object.entries(statusCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'under_review'
+
+  const allowedDecisions: Record<string, Array<{ value: string; labelEn: string; labelBn: string }>> = {
+    candidate: [
+      { value: 'needs_more_evidence', labelEn: 'Move to under review', labelBn: 'পর্যালোচনাধীনে নিন' },
+      { value: 'rejected', labelEn: 'Reject', labelBn: 'প্রত্যাখ্যান' },
+    ],
+    under_review: [
+      { value: 'field_verification_requested', labelEn: 'Request field verification', labelBn: 'ফিল্ড যাচাই অনুরোধ' },
+      { value: 'approved', labelEn: 'Approve (mark reviewed)', labelBn: 'অনুমোদন (পর্যালোচিত)' },
+      { value: 'rejected', labelEn: 'Reject', labelBn: 'প্রত্যাখ্যান' },
+    ],
+    field_verification: [
+      { value: 'approved', labelEn: 'Approve (mark reviewed)', labelBn: 'অনুমোদন (পর্যালোচিত)' },
+      { value: 'rejected', labelEn: 'Reject', labelBn: 'প্রত্যাখ্যান' },
+    ],
+    field_corroborated: [
+      { value: 'approved', labelEn: 'Approve (mark reviewed)', labelBn: 'অনুমোদন (পর্যালোচিত)' },
+      { value: 'rejected', labelEn: 'Reject', labelBn: 'প্রত্যাখ্যান' },
+    ],
+    rejected: [
+      { value: 'needs_more_evidence', labelEn: 'Reopen as under review', labelBn: 'পুনরায় খোলা' },
+    ],
+    reviewed: [],
+  }
+  const decisionOptions = allowedDecisions[dominantStatus] ?? []
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-primary" />
+            <div>
+              <div className="text-sm font-semibold" lang={lang}>{lang === 'en' ? 'Bulk action' : 'বাল্ক কর্ম'}</div>
+              <div className="text-[10px] text-muted-foreground" lang={lang}>
+                {caseIds.length} {lang === 'en' ? 'case(s) selected' : 'কেস নির্বাচিত'}
+              </div>
+            </div>
+          </div>
+          <Button size="sm" variant="ghost" onClick={onClose} className="h-8 w-8 p-0">×</Button>
+        </div>
+        <div className="flex-1 overflow-y-auto scroll-thin p-4 space-y-3">
+          {/* Selected cases preview */}
+          <div className="border border-border rounded-lg p-2 bg-muted/30 max-h-[120px] overflow-y-auto scroll-thin">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1" lang={lang}>
+              {lang === 'en' ? 'Selected cases' : 'নির্বাচিত কেস'}
+            </div>
+            <div className="space-y-0.5">
+              {cases.map((c) => (
+                <div key={c.id} className="text-[11px] font-mono flex items-center justify-between gap-2">
+                  <span className="truncate">{c.caseKey}</span>
+                  <span className="text-muted-foreground text-[9px] capitalize shrink-0">{c.status.replace(/_/g, ' ')}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {decisionOptions.length === 0 ? (
+            <div className="text-center text-xs text-muted-foreground py-4" lang={lang}>
+              {lang === 'en'
+                ? `Dominant status "${dominantStatus}" allows no further bulk actions.`
+                : `প্রধান অবস্থা "${dominantStatus}" এর জন্য কোনো বাল্ক কর্ম নেই।`}
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs" lang={lang}>
+                  {lang === 'en' ? 'Decision' : 'সিদ্ধান্ত'}{' '}
+                  <span className="text-muted-foreground/70">({lang === 'en' ? 'based on dominant status' : 'প্রধান অবস্থার উপর ভিত্তি'})</span>
+                </Label>
+                <Select value={decision} onValueChange={setDecision}>
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder={lang === 'en' ? 'Select…' : 'নির্বাচন…'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {decisionOptions.map((d) => (
+                      <SelectItem key={d.value} value={d.value} className="text-xs">
+                        {lang === 'en' ? d.labelEn : d.labelBn}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" lang={lang}>{lang === 'en' ? 'Permit status' : 'অনুমতি অবস্থা'}</Label>
+                <Select value={permitStatus} onValueChange={setPermitStatus}>
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="verified" className="text-xs">Verified</SelectItem>
+                    <SelectItem value="unverified" className="text-xs">Unverified</SelectItem>
+                    <SelectItem value="missing" className="text-xs">Missing</SelectItem>
+                    <SelectItem value="not_applicable" className="text-xs">Not applicable</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" lang={lang}>{lang === 'en' ? 'Rationale (applies to all)' : 'যৌক্তিকতা (সবার জন্য)'}</Label>
+                <Textarea
+                  value={rationale}
+                  onChange={(e) => setRationale(e.target.value)}
+                  rows={3}
+                  placeholder={lang === 'en' ? 'Document the shared evidence basis…' : 'শেয়ার্ড প্রমাণ ভিত্তি লিপিবদ্ধ করুন…'}
+                  className="text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs" lang={lang}>{lang === 'en' ? 'Next action' : 'পরবর্তী পদক্ষেপ'}</Label>
+                <Textarea
+                  value={nextAction}
+                  onChange={(e) => setNextAction(e.target.value)}
+                  rows={2}
+                  className="text-xs"
+                />
+              </div>
+            </>
+          )}
+        </div>
+        <div className="p-3 border-t border-border flex items-center justify-between gap-2">
+          <div className="text-[10px] text-muted-foreground" lang={lang}>
+            {lang === 'en' ? 'Each case is validated individually; failures do not abort the batch.' : 'প্রতিটি কেস আলাদাভাবে যাচাই; ব্যর্থতা ব্যাচ বাতিল করে না।'}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={onClose} className="h-8">
+              {lang === 'en' ? 'Cancel' : 'বাতিল'}
+            </Button>
+            {decisionOptions.length > 0 && (
+              <Button size="sm" onClick={onSubmit} disabled={bulkMutation.isPending} className="h-8">
+                {bulkMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                {lang === 'en' ? `Apply to ${caseIds.length}` : `${caseIds.length} এ প্রয়োগ`}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

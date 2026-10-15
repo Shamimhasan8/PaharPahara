@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,16 +28,22 @@ interface Props {
   data: DashboardDataDTO
   lang: Lang
   initialSlug?: string | null
+  onSelectedChange?: (slug: string | null) => void
 }
 
-export function SitesView({ data, lang, initialSlug }: Props) {
+export function SitesView({ data, lang, initialSlug, onSelectedChange }: Props) {
   const t = dict[lang]
   const { sites, cases, bulletins } = data
   const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug ?? null)
+
+  const handleSelect = useCallback((slug: string | null) => {
+    setSelectedSlug(slug)
+    onSelectedChange?.(slug)
+  }, [onSelectedChange])
   const selected = sites.find((s) => s.slug === selectedSlug) ?? null
 
   if (selected) {
-    return <SiteDetail slug={selected.slug} nameEn={selected.nameEn} nameBn={selected.nameBn} data={data} lang={lang} onBack={() => setSelectedSlug(null)} />
+    return <SiteDetail slug={selected.slug} nameEn={selected.nameEn} nameBn={selected.nameBn} data={data} lang={lang} onBack={() => handleSelect(null)} />
   }
 
   return (
@@ -63,7 +69,7 @@ export function SitesView({ data, lang, initialSlug }: Props) {
               lang={lang}
               height={420}
               selectedSiteId={selected?.id}
-              onSelectSite={(slug) => setSelectedSlug(slug)}
+              onSelectSite={(slug) => handleSelect(slug)}
             />
           </CardContent>
         </Card>
@@ -79,7 +85,7 @@ export function SitesView({ data, lang, initialSlug }: Props) {
               return (
                 <button
                   key={s.id}
-                  onClick={() => setSelectedSlug(s.slug)}
+                  onClick={() => handleSelect(s.slug)}
                   className="w-full text-left p-3 rounded-lg border border-border bg-card hover:bg-muted/50 hover:border-primary/50 transition-colors group"
                 >
                   <div className="flex items-start justify-between gap-2">

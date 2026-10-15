@@ -320,7 +320,7 @@ export default function Home() {
 
       {/* Main content */}
       <main className="flex-1 mx-auto w-full max-w-[1400px] px-4 py-6">
-        <DashboardRouter tab={effectiveTab} lang={lang} role={role} setTab={setTab} initialSiteSlug={selectedSiteSlug} initialCaseId={selectedCaseId} onCaseSelected={setSelectedCaseId} />
+        <DashboardRouter tab={effectiveTab} lang={lang} role={role} setTab={setTab} initialSiteSlug={selectedSiteSlug} initialCaseId={selectedCaseId} onCaseSelected={setSelectedCaseId} onSiteSelected={setSelectedSiteSlug} />
       </main>
 
       {/* Footer */}
@@ -372,6 +372,7 @@ function DashboardRouter({
   initialSiteSlug,
   initialCaseId,
   onCaseSelected,
+  onSiteSelected,
 }: {
   tab: Tab
   lang: Lang
@@ -380,6 +381,7 @@ function DashboardRouter({
   initialSiteSlug: string | null
   initialCaseId: string | null
   onCaseSelected: (id: string | null) => void
+  onSiteSelected: (slug: string | null) => void
 }) {
   const t = dict[lang]
   const qc = useQueryClient()
@@ -424,7 +426,7 @@ function DashboardRouter({
     case 'dashboard':
       return <DashboardView data={data} lang={lang} role={role} setTab={setTab as (t: string) => void} />
     case 'sites':
-      return <SitesView data={data} lang={lang} initialSlug={initialSiteSlug} />
+      return <SitesView data={data} lang={lang} initialSlug={initialSiteSlug} onSelectedChange={onSiteSelected} />
     case 'cases':
       return <CasesView data={data} lang={lang} role={role} reload={reload} initialSelectedId={initialCaseId} onSelectedChange={onCaseSelected} />
     case 'reports':

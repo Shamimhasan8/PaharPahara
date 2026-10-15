@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Mountain, CloudRain, AlertTriangle, FileText, Activity, MapPin, TrendingUp, ShieldCheck } from 'lucide-react'
+import { Mountain, CloudRain, AlertTriangle, FileText, Activity, MapPin, TrendingUp, ShieldCheck, Download } from 'lucide-react'
 import type { DashboardDataDTO, Role } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 import { dict } from '@/lib/i18n'
@@ -63,6 +63,16 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             <Activity className="h-3.5 w-3.5" />
             <span lang={lang}>{relativeTime(new Date().toISOString(), lang)}</span>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open('/api/dashboard/export', '_blank')}
+            className="h-8 gap-1.5"
+            title={lang === 'en' ? 'Export dashboard data as JSON' : 'ড্যাশবোর্ড ডেটা JSON হিসেবে রপ্তানি'}
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline" lang={lang}>{lang === 'en' ? 'Export' : 'রপ্তানি'}</span>
+          </Button>
         </div>
       </div>
 
