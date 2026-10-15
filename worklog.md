@@ -639,3 +639,66 @@ Rounds 1-7 established a fully functional prototype with comprehensive features.
 8. **Dashboard data diff on import**: When importing a JSON, show a diff against the current dashboard state.
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 9 — webDevReview (cron job 461689, 2026-10-16 01:50 BST)
+
+### Current project status description / assessment
+Rounds 1-8 established a comprehensive prototype. Server healthy (HTTP 200, no console errors). This round focused on (a) making the import feature actually work (localStorage fallback in query layer), (b) adding loading skeletons, and (c) case timeline mobile vertical stacking.
+
+### Completed modifications / verification results
+
+**Fix 1: Dashboard query layer localStorage fallback**
+- Updated the `useQuery` for `['dashboard']` in `DashboardRouter` to check localStorage for imported data first.
+- If `pp-imported-dashboard` exists in localStorage, it parses and returns that data instead of fetching from `/api/dashboard`.
+- Invalid stored data is automatically removed.
+- Added `ImportedDataBanner` component at the top of the main content area:
+  - Shows when imported data is active (violet banner with Upload icon).
+  - Displays "Viewing imported data" + timestamp of import.
+  - "Clear & reload" button removes the localStorage data and reloads.
+- Verified: banner appears when data is imported; clearing returns to live API data.
+
+**New feature: Loading skeletons**
+- New `/src/components/pahar/skeletons.tsx` with reusable skeleton components:
+  - `Skeleton` — base animated pulse placeholder.
+  - `StatCardSkeleton` — placeholder for stat cards (label + icon + value + sub).
+  - `DashboardSkeleton` — full dashboard placeholder with header, banner, 4 stat cards, map+cases row, sources+jobs row, activity+sparklines row.
+  - `CaseListSkeleton` — placeholder for the Cases view.
+- Replaced the spinner-only loading state in `DashboardRouter` with `<DashboardSkeleton />`.
+- Verified: dashboard shows skeleton placeholders while loading (instead of a bare spinner).
+
+**New feature: Case timeline mobile vertical stacking**
+- Updated `CaseTimeline` component to render two layouts:
+  - **Desktop (sm+)**: horizontal timeline with stage nodes + connectors (existing behavior, `hidden sm:block`).
+  - **Mobile (<sm)**: vertical timeline with stages stacked top-to-bottom, connected by a vertical line on the left (`sm:hidden`). Each stage shows a colored node + label + relative time + actor.
+  - Rejected end-state also has a mobile vertical variant.
+- Verified: mobile view (375px) shows vertical timeline with stages stacked; desktop view still shows horizontal timeline.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Dashboard loads with skeleton placeholders during loading.
+  - ✓ Activity Feed + Source Health Trends panels side-by-side with equal height.
+  - ✓ Mobile case detail shows vertical timeline (stages stacked top-to-bottom with vertical connecting line).
+  - ✓ No console errors.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Sparkline tooltip overflow**: On the leftmost sparklines, the tooltip might overflow the card edge. Could add boundary detection.
+2. **SourceHealthHistory not auto-logged**: Currently only seed data exists. A production version would log new entries when access state flips.
+3. **Case list skeleton not wired**: The `CaseListSkeleton` component exists but the Cases view still uses a spinner. Could wire it in.
+
+**Recommended next-phase work:**
+1. **WebSocket live updates**: Replace 30s/60s polling with a socket.io mini-service.
+2. **Print stylesheet extraction**: Move inline printable-report CSS to a shared stylesheet.
+3. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+4. **Auto-log SourceHealthHistory**: Add a check in the source health endpoint that creates a new history entry when the current access state differs from the last logged state.
+5. **Activity feed real-time WebSocket push**: When a new audit log is written, push it to all connected clients.
+6. **Dashboard data diff on import**: When importing a JSON, show a diff against the current dashboard state.
+7. **Case list skeleton wiring**: Replace the Cases view spinner with `CaseListSkeleton`.
+8. **Sparkline tooltip boundary detection**: Prevent tooltip overflow on edge sparklines.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

@@ -9,7 +9,7 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
-import { Mountain, LogOut, Globe, Bell, Loader2, Menu, X, ShieldAlert, Search, Command } from 'lucide-react'
+import { Mountain, LogOut, Globe, Bell, Loader2, Menu, X, ShieldAlert, Search, Command, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -33,6 +33,7 @@ import { DhakaClock } from '@/components/pahar/dhaka-clock'
 import { ThemeToggle } from '@/components/pahar/theme-toggle'
 import { CommandPalette } from '@/components/pahar/command-palette'
 import { KeyboardShortcutsHelp, useKeyboardShortcuts } from '@/components/pahar/keyboard-shortcuts'
+import { DashboardSkeleton } from '@/components/pahar/skeletons'
 
 type Tab = 'dashboard' | 'sites' | 'cases' | 'reports' | 'sources' | 'jobs' | 'preparedness' | 'notifications' | 'audit' | 'compare'
 
@@ -320,6 +321,12 @@ export default function Home() {
 
       {/* Main content */}
       <main className="flex-1 mx-auto w-full max-w-[1400px] px-4 py-6">
+        {/* Imported data banner */}
+        <ImportedDataBanner lang={lang} onClear={() => {
+          localStorage.removeItem('pp-imported-dashboard')
+          localStorage.removeItem('pp-imported-dashboard-time')
+          window.location.reload()
+        }} />
         <DashboardRouter tab={effectiveTab} lang={lang} role={role} setTab={setTab} initialSiteSlug={selectedSiteSlug} initialCaseId={selectedCaseId} onCaseSelected={setSelectedCaseId} onSiteSelected={setSelectedSiteSlug} />
       </main>
 
@@ -387,9 +394,23 @@ function DashboardRouter({
   const qc = useQueryClient()
 
   // Single dashboard query for everything (sites, cases, sources, jobs, notifications, bulletins, rainfall summary)
+  // Checks localStorage for imported data first; falls back to API.
   const { data, isLoading, error, refetch } = useQuery<DashboardDataDTO>({
     queryKey: ['dashboard'],
     queryFn: async () => {
+      // Check for imported data in localStorage (set by the Import button)
+      if (typeof window !== 'undefined') {
+        const imported = localStorage.getItem('pp-imported-dashboard')
+        if (imported) {
+          try {
+            return JSON.parse(imported) as DashboardDataDTO
+          } catch {
+            // Invalid stored data — remove and fall through to API
+            localStorage.removeItem('pp-imported-dashboard')
+            localStorage.removeItem('pp-imported-dashboard-time')
+          }
+        }
+      }
       const res = await fetch('/api/dashboard', { credentials: 'include' })
       if (!res.ok) throw new Error('failed')
       return res.json()
@@ -403,11 +424,7 @@ function DashboardRouter({
   }, [qc])
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
   if (error || !data) {
     return (
@@ -623,6 +640,42 @@ function LoginScreen({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void
           </Card>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Banner shown when imported dashboard data is active (from localStorage).
+function ImportedDataBanner({ lang, onClear }: { lang: Lang; onClear: () => void }) {
+  const [info, setInfo] = useState<{ time: string } | null>(() => {
+    if (typeof window === 'undefined') return null
+    const stored = localStorage.getItem('pp-imported-dashboard')
+    const storedTime = localStorage.getItem('pp-imported-dashboard-time')
+    if (stored && storedTime) return { time: storedTime }
+    return null
+  })
+
+  if (!info) return null
+
+  return (
+    <div className="mb-4 p-2.5 rounded-lg border border-violet-200 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-800 flex items-center gap-2.5">
+      <Upload className="h-4 w-4 text-violet-600 dark:text-violet-300 shrink-0" />
+      <div className="flex-1 min-w-0 text-xs">
+        <span className="font-medium text-violet-900 dark:text-violet-200" lang={lang}>
+          {lang === 'en' ? 'Viewing imported data' : 'ইম্পোর্ট করা ডেটা দেখা হচ্ছে'}
+        </span>
+        <span className="text-violet-700 dark:text-violet-300 ml-1.5">
+          · {new Date(info.time).toLocaleString(lang === 'bn' ? 'bn-BD' : 'en-GB', { timeZone: 'Asia/Dhaka' })}
+        </span>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onClear}
+        className="h-7 text-[11px] gap-1 border-violet-300 text-violet-700 hover:bg-violet-100 dark:border-violet-700 dark:text-violet-200 dark:hover:bg-violet-900/40"
+      >
+        <X className="h-3 w-3" />
+        <span lang={lang}>{lang === 'en' ? 'Clear & reload' : 'মুছুন ও রিলোড'}</span>
+      </Button>
     </div>
   )
 }

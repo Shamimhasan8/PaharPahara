@@ -103,8 +103,8 @@ export function CaseTimeline({ c, lang }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Horizontal stage timeline */}
-      <div className="overflow-x-auto scroll-thin pb-2">
+      {/* Horizontal stage timeline (desktop) */}
+      <div className="hidden sm:block overflow-x-auto scroll-thin pb-2">
         <div className="flex items-center min-w-max gap-0 px-1">
           {STAGES.map((stage, idx) => {
             const visited = visitedStages.has(stage)
@@ -163,7 +163,7 @@ export function CaseTimeline({ c, lang }: Props) {
               </div>
             )
           })}
-          {/* Rejected end-state */}
+          {/* Rejected end-state (horizontal) */}
           {isRejected && (
             <>
               <div className="flex-shrink-0 mx-1">
@@ -180,6 +180,64 @@ export function CaseTimeline({ c, lang }: Props) {
                 </div>
               </div>
             </>
+          )}
+        </div>
+      </div>
+
+      {/* Vertical stage timeline (mobile) */}
+      <div className="sm:hidden">
+        <div className="relative pl-6">
+          {/* Vertical line */}
+          <div className="absolute left-2.5 top-2 bottom-2 w-px bg-border" />
+          {STAGES.map((stage, idx) => {
+            const visited = visitedStages.has(stage)
+            const isCurrent = currentStatus === stage
+            const ev = stageEvents[stage]
+            const colors = STAGE_COLORS[stage] ?? STAGE_COLORS.candidate
+            return (
+              <div key={stage} className="relative pb-3 last:pb-0">
+                {/* Node */}
+                <div
+                  className={`absolute left-[-14px] top-0.5 h-5 w-5 rounded-full flex items-center justify-center border-2 transition-all ${
+                    isCurrent
+                      ? `${colors.border} ${colors.bg} shadow-md`
+                      : visited
+                        ? `${colors.border} ${colors.bg}`
+                        : 'border-border bg-card'
+                  }`}
+                >
+                  {visited ? (
+                    <span className={`h-2 w-2 rounded-full ${colors.dot}`} />
+                  ) : (
+                    <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                  )}
+                </div>
+                {/* Label */}
+                <div className="ml-2">
+                  <div className={`text-[11px] font-medium ${isCurrent ? colors.text : visited ? 'text-foreground/80' : 'text-muted-foreground/50'}`}>
+                    {lang === 'en' ? STAGE_LABELS_EN[stage] : STAGE_LABELS_BN[stage]}
+                  </div>
+                  {ev && (
+                    <div className="text-[9px] text-muted-foreground/70">
+                      {relativeTime(ev.at, lang)} · {ev.actor}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+          {/* Rejected end-state (mobile vertical) */}
+          {isRejected && (
+            <div className="relative pb-3 last:pb-0">
+              <div className="absolute left-[-14px] top-0.5 h-5 w-5 rounded-full flex items-center justify-center border-2 border-rose-300 bg-rose-100 dark:bg-rose-950/40 dark:border-rose-800 shadow-md">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
+              </div>
+              <div className="ml-2">
+                <div className="text-[11px] font-medium text-rose-700 dark:text-rose-300">
+                  {lang === 'en' ? 'Rejected' : 'প্রত্যাখ্যাত'}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
