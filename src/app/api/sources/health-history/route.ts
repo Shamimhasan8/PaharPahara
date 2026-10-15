@@ -1,5 +1,6 @@
 // PaharPahara — source health history endpoint.
 // Returns real access-state history per source adapter from the SourceHealthHistory table.
+// Auto-logs new history entries when the current access state differs from the last logged state.
 // Falls back to synthesized data if no history records exist.
 
 import { NextResponse } from 'next/server'
@@ -21,6 +22,25 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const sources = await db.sourceRegistry.findMany({ orderBy: { adapter: 'asc' } })
+
+  // Auto-log: check if any source's current access state differs from the last logged state.
+  // If so, create a new SourceHealthHistory entry for today.
+  for (const s of sources) {
+    const lastEntry = await db.sourceHealthHistory.findFirst({
+      where: { sourceId: s.id },
+      orderBy: { checkedAt: 'desc' },
+    })
+    if (!lastEntry || lastEntry.accessState !== s.accessState) {
+      await db.sourceHealthHistory.create({
+        data: {
+          sourceId: s.id,
+          accessState: s.accessState,
+          checkedAt: new Date(),
+          note: 'auto-logged on state change',
+        },
+      })
+    }
+  }
 
   // Try to fetch real history from SourceHealthHistory table
   const realHistory = await db.sourceHealthHistory.findMany({

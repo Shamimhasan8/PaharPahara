@@ -72,27 +72,11 @@ function renderReportHtml(snap: Record<string, unknown>, report: { id: string; v
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  body { font-family: 'Inter','Noto Sans Bengali',system-ui,sans-serif; max-width: 820px; margin: 32px auto; padding: 24px; color: #1a1a1a; line-height: 1.55; }
-  :lang(bn) body, body[lang="bn"] { font-family: 'Noto Sans Bengali','Inter',sans-serif; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin: 28px 0 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
-  .meta { color: #666; font-size: 13px; margin-bottom: 16px; }
-  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #fde68a; color: #78350f; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  td, th { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
-  th { width: 38%; color: #666; font-weight: 500; }
-  .hash { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; word-break: break-all; background: #f6f6f6; padding: 8px; border-radius: 4px; }
-  .footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 11px; color: #888; }
-  .draft { background: #fef3c7; color: #92400e; }
-  .reviewed { background: #d1fae5; color: #065f46; }
-  .field { background: #dbeafe; color: #1e3a8a; }
-  @media print { body { margin: 0; padding: 12mm; } .noprint { display: none; } }
-</style>
+<link rel="stylesheet" href="/assets/css/report-print.css">
 </head>
 <body lang="${bn ? 'bn' : 'en'}">
-  <div class="noprint" style="text-align:right;margin-bottom:16px;">
-    <button onclick="window.print()" style="padding:8px 16px;background:#1a1a1a;color:white;border:none;border-radius:6px;cursor:pointer;">${bn ? 'প্রিন্ট / PDF' : 'Print / Save as PDF'}</button>
+  <div class="noprint">
+    <button onclick="window.print()">${bn ? 'প্রিন্ট / PDF' : 'Print / Save as PDF'}</button>
   </div>
   <h1>${bn ? 'পাহাড় বিঘ্ন ও আবহাওয়া মূল্যায়ন' : 'Hill Disturbance & Weather Assessment'}</h1>
   <div class="meta">

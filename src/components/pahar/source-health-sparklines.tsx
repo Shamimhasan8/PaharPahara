@@ -173,9 +173,15 @@ function Sparkline({ points }: { points: HistoryPoint[] }) {
           />
         )}
       </svg>
-      {/* Tooltip */}
+      {/* Tooltip — position adjusts to prevent edge overflow */}
       {hover != null && hoverPoint && (
-        <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-foreground text-background text-[8px] font-mono whitespace-nowrap pointer-events-none z-10">
+        <div
+          className="absolute -top-7 px-1.5 py-0.5 rounded bg-foreground text-background text-[8px] font-mono whitespace-nowrap pointer-events-none z-10"
+          style={{
+            left: hover === 0 ? '0' : hover === points.length - 1 ? `${width}px` : `${hover * stepX}px`,
+            transform: hover === 0 ? 'translateX(0)' : hover === points.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)',
+          }}
+        >
           {hoverPoint.date}: {hoverPoint.state.replace(/_/g, ' ')}
         </div>
       )}

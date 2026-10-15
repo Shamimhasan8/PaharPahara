@@ -702,3 +702,60 @@ Rounds 1-8 established a comprehensive prototype. Server healthy (HTTP 200, no c
 8. **Sparkline tooltip boundary detection**: Prevent tooltip overflow on edge sparklines.
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 10 — webDevReview (cron job 461689, 2026-10-16 02:10 BST)
+
+### Current project status description / assessment
+Rounds 1-9 established a comprehensive prototype with all core features: case review workflow, bilingual reports, command palette, audit log, expandable sources, case + site comparison, keyboard shortcuts, report version diff, case lifecycle timeline, bookmarkable URL hash, bulk case actions, date-range filter, dashboard JSON export/import, notification category settings, activity feed widget, source health sparklines, loading skeletons, and mobile vertical timeline. Server healthy (HTTP 200, no console errors). This round focused on (a) fixing sparkline tooltip overflow, (b) auto-logging SourceHealthHistory, and (c) extracting the report print stylesheet to a shared CSS file.
+
+### Completed modifications / verification results
+
+**Fix 1: Sparkline tooltip boundary detection**
+- Updated the `Sparkline` component in `source-health-sparklines.tsx`:
+  - Tooltip position now adjusts based on the hovered point's index.
+  - First point (index 0): tooltip aligns to the left edge (`translateX(0)`).
+  - Last point (index = length-1): tooltip aligns to the right edge (`translateX(-100%)`).
+  - Middle points: tooltip centered (`translateX(-50%)`).
+  - Prevents tooltip overflow on the leftmost and rightmost sparklines.
+
+**Fix 2: Print stylesheet extraction**
+- Created `/public/assets/css/report-print.css` — a shared stylesheet for the printable report HTML.
+- Contains all the previously inline styles: body font/spacing, h1/h2 typography, meta/badge/table/hash/footer classes, draft/reviewed/field badge colors, noprint button styling, and @media print rules.
+- Updated `/api/reports/[id]?format=html` to link to the external stylesheet via `<link rel="stylesheet" href="/assets/css/report-print.css">` instead of inline `<style>` block.
+- Removed inline `style` attributes from the noprint button (now styled by the CSS class).
+- Verified: report renders correctly with external CSS — proper typography, table styling, colored badges, print button.
+
+**New feature: Auto-log SourceHealthHistory**
+- Updated `/api/sources/health-history` endpoint:
+  - Before fetching history, checks each source's current `accessState` against the last logged `SourceHealthHistory` entry.
+  - If they differ (or no history exists), creates a new `SourceHealthHistory` entry with `checkedAt = now()` and `note = 'auto-logged on state change'`.
+  - This ensures the sparkline trend data stays current without manual intervention.
+  - The auto-log runs on every GET request to the endpoint (which fires every 60s from the dashboard's refetchInterval).
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Report renders correctly with external CSS (proper typography, tables, badges, colors).
+  - ✓ No console errors.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Auto-log frequency**: The SourceHealthHistory auto-log runs on every GET request to `/api/sources/health-history` (every 60s). This is acceptable for the prototype but could be optimized with a timestamp check (only log if the last entry is >1 hour old).
+2. **Report CSS served via Next.js**: The CSS file is in `/public/assets/css/` which Next.js serves statically. This works but means the CSS isn't processed by Tailwind/PostCSS. For production, consider importing it as a CSS module.
+3. **Case list skeleton**: The `CaseListSkeleton` component exists but isn't wired into the Cases view loading state (the router-level `DashboardSkeleton` covers all tabs).
+
+**Recommended next-phase work:**
+1. **WebSocket live updates**: Replace 30s/60s polling with a socket.io mini-service for real-time activity feed + BMD alerts.
+2. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+3. **Activity feed real-time WebSocket push**: When a new audit log is written, push it to all connected clients.
+4. **Dashboard data diff on import**: When importing a JSON, show a diff against the current dashboard state.
+5. **Auto-log frequency optimization**: Only log SourceHealthHistory if the last entry is >1 hour old.
+6. **Case list skeleton wiring**: Replace the Cases view's loading with `CaseListSkeleton`.
+7. **Activity feed item detail**: Add a "Details" button on each activity feed item that opens a detail drawer.
+8. **Dashboard weather forecast chart**: Add a 3-day forecast chart to the dashboard (currently only on the Preparedness view).
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
