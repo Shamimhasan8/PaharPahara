@@ -66,6 +66,7 @@ const SEVERITY_STYLES: Record<string, { icon: LucideIcon; bg: string; text: stri
 export function ActivityFeed({ lang, height = 360 }: Props) {
   const t = dict[lang]
   const [filter, setFilter] = useState<string>('all')
+  const [selectedItem, setSelectedItem] = useState<FeedItem | null>(null)
 
   const { data, isLoading } = useQuery<{ items: FeedItem[]; total: number }>({
     queryKey: ['activity-feed'],
@@ -169,7 +170,8 @@ export function ActivityFeed({ lang, height = 360 }: Props) {
                 return (
                   <li
                     key={item.id}
-                    className="relative pl-10 pr-3 py-2 hover:bg-muted/30 transition-colors border-b border-border/30 last:border-0"
+                    className="relative pl-10 pr-3 py-2 hover:bg-muted/30 transition-colors border-b border-border/30 last:border-0 cursor-pointer"
+                    onClick={() => setSelectedItem(item)}
                   >
                     {/* Node on the timeline */}
                     <div className={`absolute left-2 top-2.5 h-4 w-4 rounded-full flex items-center justify-center ${sevStyle.bg} ring-2 ring-background`}>
@@ -222,6 +224,81 @@ export function ActivityFeed({ lang, height = 360 }: Props) {
           )}
         </div>
       </CardContent>
+
+      {/* Item detail drawer */}
+      {selectedItem && (
+        <ActivityItemDrawer item={selectedItem} lang={lang} onClose={() => setSelectedItem(null)} />
+      )}
     </Card>
+  )
+}
+
+// Activity feed item detail drawer
+function ActivityItemDrawer({ item, lang, onClose }: { item: FeedItem; lang: Lang; onClose: () => void }) {
+  const sevStyle = SEVERITY_STYLES[item.severity] ?? SEVERITY_STYLES.info
+  const SevIcon = sevStyle.icon
+  const CatIcon = CATEGORY_ICONS[item.category] ?? Activity
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:max-w-md max-h-[70vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${sevStyle.bg}`}>
+              <SevIcon className={`h-4 w-4 ${sevStyle.text}`} />
+            </div>
+            <div>
+              <div className="text-sm font-semibold" lang={lang}>
+                {lang === 'en' ? item.titleEn : item.titleBn}
+              </div>
+              <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                <CatIcon className="h-2.5 w-2.5" />
+                <span className="capitalize">{item.category}</span>
+                <span className="opacity-50">·</span>
+                <span>{relativeTime(item.timestamp, lang)}</span>
+              </div>
+            </div>
+          </div>
+          <Button size="sm" variant="ghost" onClick={onClose} className="h-8 w-8 p-0">×</Button>
+        </div>
+        <div className="flex-1 overflow-y-auto scroll-thin p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="border border-border rounded-lg p-2.5 bg-muted/30">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Timestamp</div>
+              <div className="text-xs font-mono mt-0.5">{fmtDate(item.timestamp, lang)}</div>
+            </div>
+            <div className="border border-border rounded-lg p-2.5 bg-muted/30">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Severity</div>
+              <div className={`text-xs font-medium mt-0.5 capitalize ${sevStyle.text}`}>{item.severity}</div>
+            </div>
+            <div className="border border-border rounded-lg p-2.5 bg-muted/30">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Action</div>
+              <div className="text-xs font-mono mt-0.5">{item.action}</div>
+            </div>
+            <div className="border border-border rounded-lg p-2.5 bg-muted/30">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Actor</div>
+              <div className="text-xs mt-0.5 truncate">{item.actorName ?? '—'}</div>
+            </div>
+          </div>
+          {item.detailEn && (
+            <div className="border border-border rounded-lg p-2.5 bg-muted/30">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Detail</div>
+              <div className="text-xs break-all" lang={lang}>
+                {lang === 'en' ? item.detailEn : item.detailBn}
+              </div>
+            </div>
+          )}
+          <div className="border border-border rounded-lg p-2.5 bg-muted/30">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Raw JSON</div>
+            <pre className="text-[10px] font-mono overflow-x-auto scroll-thin">
+              {JSON.stringify(item, null, 2)}
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

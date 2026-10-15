@@ -759,3 +759,70 @@ Rounds 1-9 established a comprehensive prototype with all core features: case re
 8. **Dashboard weather forecast chart**: Add a 3-day forecast chart to the dashboard (currently only on the Preparedness view).
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 11 — webDevReview (cron job 461689, 2026-10-16 02:30 BST)
+
+### Current project status description / assessment
+Rounds 1-10 established a comprehensive prototype with all core features. Server healthy (HTTP 200, no console errors). This round focused on (a) optimizing the SourceHealthHistory auto-log frequency, (b) adding activity feed item detail drawer, and (c) adding a dashboard weather forecast mini-chart.
+
+### Completed modifications / verification results
+
+**Fix 1: Auto-log frequency optimization**
+- Updated `/api/sources/health-history` endpoint:
+  - Auto-log now only creates a new `SourceHealthHistory` entry if the last entry is >1 hour old (prevents excessive entries on every 60s poll).
+  - Three conditions trigger logging: (1) no history exists (`note: 'initial'`), (2) state changed (`note: 'auto-logged on state change'`), (3) last entry is >1hr old (`note: 'periodic heartbeat'`).
+  - This reduces DB writes from ~9 per minute to ~9 per hour under normal conditions.
+
+**New feature: Activity feed item detail drawer**
+- Each activity feed `<li>` item is now clickable (`cursor-pointer` class + `onClick` handler).
+- Clicking an item opens a bottom-sheet/dialog drawer (`ActivityItemDrawer` component):
+  - Header: severity icon in colored badge, item title, category + relative time.
+  - 4 metadata cards: Timestamp (absolute), Severity (colored), Action (raw action name), Actor (name).
+  - Detail section: full detail text (break-all for long strings).
+  - Raw JSON section: full JSON dump of the feed item (scrollable, monospace).
+  - Close via × button, backdrop click, or Esc.
+- Verified: clicking an activity feed item opens the drawer with full details.
+
+**New feature: Dashboard weather forecast mini-chart**
+- New `DashboardForecastChart` component (`/src/components/pahar/dashboard-forecast-chart.tsx`):
+  - Fetches weather data from `/api/weather?siteId=...` for the lead demo site (Chashma Hill).
+  - Groups Open-Meteo forecast intervals into 24h windows for the next 3 days.
+  - Renders a compact bar chart (140px height) with:
+    - Colored bars (blue for normal, red for >100mm YPSA threshold).
+    - YPSA 100mm/24h threshold reference line.
+    - X-axis with weekday + day labels.
+    - Y-axis with mm label.
+    - Tooltip on hover.
+  - Card with "3-day forecast" title + site name + "Open-Meteo GFS" subtitle.
+  - Loading state shows spinner; empty state shows "No forecast data."
+- Integrated into the dashboard below the Activity Feed + Source Health Sparklines row.
+- Verified: 3-day forecast mini-chart visible at the bottom of the dashboard with colored bars.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ 3-day forecast mini-chart visible at the bottom of the dashboard.
+  - ✓ Activity feed items are clickable and open a detail drawer with metadata + raw JSON.
+  - ✓ No console errors.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Forecast chart only shows Chashma Hill**: The dashboard forecast chart is hardcoded to the first site. Could add a site selector.
+2. **Activity feed drawer doesn't show linked resource**: The drawer shows raw JSON but doesn't link to the related case/site/job for navigation.
+3. **Auto-log still creates entries on first request**: On the very first request after server restart, the auto-log creates entries for all sources (since the 1-hour check compares against existing seed data which may be >1hr old).
+
+**Recommended next-phase work:**
+1. **WebSocket live updates**: Replace 30s/60s polling with a socket.io mini-service for real-time activity feed + BMD alerts.
+2. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+3. **Forecast site selector**: Add a dropdown to switch which site's forecast is shown on the dashboard.
+4. **Activity feed drawer navigation**: Add "View case" / "View job" links in the drawer to navigate to the related resource.
+5. **Dashboard data diff on import**: When importing a JSON, show a diff against the current dashboard state.
+6. **Case list skeleton wiring**: Replace the Cases view's loading with `CaseListSkeleton`.
+7. **Activity feed real-time WebSocket push**: When a new audit log is written, push it to all connected clients.
+8. **Dashboard responsive grid improvement**: Use fluid grid for stat cards on wider screens.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

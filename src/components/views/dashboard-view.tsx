@@ -10,6 +10,7 @@ import { dict } from '@/lib/i18n'
 import { ChattogramMap } from '@/components/pahar/chattogram-map'
 import { ActivityFeed } from '@/components/pahar/activity-feed'
 import { SourceHealthSparklines } from '@/components/pahar/source-health-sparklines'
+import { DashboardForecastChart } from '@/components/pahar/dashboard-forecast-chart'
 import {
   AccessStateBadge,
   CaseStatusBadge,
@@ -334,6 +335,11 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
         <ActivityFeed lang={lang} height={320} />
         <SourceHealthSparklines lang={lang} />
       </div>
+
+      {/* 3-day forecast mini-chart (Chashma Hill) */}
+      {sites[0] && (
+        <DashboardForecastChart siteId={sites[0].id} siteName={lang === 'en' ? sites[0].nameEn : sites[0].nameBn} lang={lang} />
+      )}
 
       {/* Import preview dialog */}
       {importPreview && (

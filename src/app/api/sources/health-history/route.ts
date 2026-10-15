@@ -24,19 +24,22 @@ export async function GET() {
   const sources = await db.sourceRegistry.findMany({ orderBy: { adapter: 'asc' } })
 
   // Auto-log: check if any source's current access state differs from the last logged state.
-  // If so, create a new SourceHealthHistory entry for today.
+  // Only log if the last entry is >1 hour old (prevents excessive entries on every 60s poll).
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
   for (const s of sources) {
     const lastEntry = await db.sourceHealthHistory.findFirst({
       where: { sourceId: s.id },
       orderBy: { checkedAt: 'desc' },
     })
-    if (!lastEntry || lastEntry.accessState !== s.accessState) {
+    // Log if: no history exists, OR state changed, OR last entry is >1hr old (periodic heartbeat)
+    const shouldLog = !lastEntry || lastEntry.accessState !== s.accessState || lastEntry.checkedAt < oneHourAgo
+    if (shouldLog) {
       await db.sourceHealthHistory.create({
         data: {
           sourceId: s.id,
           accessState: s.accessState,
           checkedAt: new Date(),
-          note: 'auto-logged on state change',
+          note: !lastEntry ? 'initial' : lastEntry.accessState !== s.accessState ? 'auto-logged on state change' : 'periodic heartbeat',
         },
       })
     }
