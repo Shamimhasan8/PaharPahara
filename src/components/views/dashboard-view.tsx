@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Mountain, CloudRain, AlertTriangle, FileText, Activity, MapPin, TrendingUp, ShieldCheck, Download } from 'lucide-react'
+import { Mountain, CloudRain, AlertTriangle, FileText, Activity, MapPin, TrendingUp, ShieldCheck, Download, Upload } from 'lucide-react'
 import type { DashboardDataDTO, Role } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 import { dict } from '@/lib/i18n'
@@ -75,6 +75,38 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             <Download className="h-3.5 w-3.5" />
             <span className="hidden sm:inline" lang={lang}>{lang === 'en' ? 'Export' : 'রপ্তানি'}</span>
           </Button>
+          <label
+            className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+            title={lang === 'en' ? 'Import dashboard data from JSON' : 'JSON থেকে ড্যাশবোর্ড ডেটা ইম্পোর্ট'}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline" lang={lang}>{lang === 'en' ? 'Import' : 'ইম্পোর্ট'}</span>
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  try {
+                    const json = ev.target?.result as string
+                    // Validate it's valid JSON by parsing
+                    JSON.parse(json)
+                    // Store in localStorage for the dashboard to read
+                    localStorage.setItem('pp-imported-dashboard', json)
+                    localStorage.setItem('pp-imported-dashboard-time', new Date().toISOString())
+                    window.location.reload()
+                  } catch {
+                    // Invalid JSON — show error via alert (simple for prototype)
+                    alert(lang === 'en' ? 'Invalid JSON file' : 'অবৈধ JSON ফাইল')
+                  }
+                }
+                reader.readAsText(file)
+              }}
+            />
+          </label>
         </div>
       </div>
 

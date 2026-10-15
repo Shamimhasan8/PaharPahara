@@ -501,3 +501,74 @@ Rounds 1-5 established a fully functional prototype with case review workflow, b
 8. **Source health history table**: Add a real SourceHealthHistory Prisma model + seed historical data + log changes when access state flips.
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 7 — webDevReview (cron job 461689, 2026-10-16 01:10 BST)
+
+### Current project status description / assessment
+Rounds 1-6 established a fully functional prototype with comprehensive features: case review workflow, bilingual reports, command palette, audit log, expandable sources, case + site comparison, keyboard shortcuts, report version diff, case lifecycle timeline, bookmarkable URL hash, bulk case actions, date-range filter, dashboard JSON export, notification category settings, activity feed widget, source health sparklines, and bulk action results breakdown. Server healthy (HTTP 200, no console errors). This round focused on (a) fixing the 3 minor items from Round 6 and (b) adding 2 new features: dashboard JSON import and activity feed CSV export.
+
+### Completed modifications / verification results
+
+**Fix 1: Activity feed deduplication**
+- Updated `/api/activity-feed` endpoint to deduplicate events by `(action + timestamp_rounded_to_second + category)`. If the same event appears in both audit logs and notifications, only the first occurrence is kept.
+- This reduces noise in the feed when multiple data sources report the same underlying event.
+
+**Fix 2: Sparkline hover tooltips**
+- Updated `Sparkline` component in `source-health-sparklines.tsx`:
+  - Added invisible hover hit-areas (one per data point) that track mouse position.
+  - On hover: shows a white circle indicator on the hovered point + a tooltip above the sparkline showing "YYYY-MM-DD: <state>".
+  - Tooltip uses `bg-foreground text-background` for high contrast.
+  - Hover state is component-local (`useState`), no re-render of the parent.
+  - Tooltip auto-disappears on mouse leave.
+
+**Fix 3: Report diff "show full" expand**
+- Updated `ReportDiffDrawer` in `reports-view.tsx`:
+  - `fmtVal` now returns `{ text, full, truncated }` instead of a plain string. Object values are truncated to 60 chars, strings to 80.
+  - Each diff row shows a `+` / `−` button next to the field name when either value is truncated.
+  - Clicking the button toggles between truncated and full view for that row.
+  - Full values use `break-all` to wrap long strings.
+  - Expanded state is tracked per-field in a `Set<string>`.
+
+**New feature: Dashboard JSON import**
+- Added "Import" button (Upload icon) next to the "Export" button in the dashboard header.
+- Clicking it opens a file picker (accepts `.json` files only).
+- On file selection: reads the file as text, validates it's valid JSON, stores it in `localStorage` (`pp-imported-dashboard` + `pp-imported-dashboard-time`), and reloads the page.
+- On reload, the dashboard data is available from localStorage for inspection/restore (the query layer can read it as a fallback in a future iteration).
+- Invalid JSON shows an alert: "Invalid JSON file" / "অবৈধ JSON ফাইল".
+- Verified: Import button visible next to Export button.
+
+**New feature: Activity feed CSV export**
+- New `/api/activity-feed/export-csv` endpoint: returns the activity feed as a downloadable CSV file with headers (Timestamp, Category, Action, Title, Detail, Severity, Actor). Aggregates the same data as the JSON endpoint (audit logs, jobs, case detections, BMD bulletins).
+- Added a Download icon button in the Activity Feed panel header (next to the Live indicator).
+- Clicking it opens the CSV download in a new tab.
+- Filename: `paharpahara-activity-feed-<timestamp>.csv`.
+- Verified: Download icon visible in Activity feed header.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Dashboard shows Import button next to Export.
+  - ✓ Activity feed shows CSV Download icon in header.
+  - ✓ No console errors.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Import doesn't actually swap dashboard data**: The import stores JSON in localStorage but the dashboard queries still fetch from the API. A future iteration would have the query layer check localStorage first.
+2. **Source health history is still synthesized**: The 14-day history is deterministic but not real. A SourceHealthHistory Prisma model would enable real logging.
+3. **Sparkline tooltip position**: On the leftmost sparklines, the tooltip might overflow the card edge. Could add boundary detection.
+
+**Recommended next-phase work:**
+1. **SourceHealthHistory Prisma model**: Add a real table + seed historical data + log changes when access state flips.
+2. **WebSocket live updates**: Replace 30s/60s polling with a socket.io mini-service.
+3. **Print stylesheet extraction**: Move inline printable-report CSS to a shared stylesheet.
+4. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+5. **Case timeline mobile stacking**: The 5-stage horizontal timeline could stack vertically on mobile.
+6. **Import data preview**: Before reloading, show a preview of what's in the imported JSON (sites count, cases count, etc.).
+7. **Activity feed real-time WebSocket push**: When a new audit log is written, push it to all connected clients via WebSocket.
+8. **Dashboard data diff**: When importing a JSON, show a diff against the current dashboard state (what changed).
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

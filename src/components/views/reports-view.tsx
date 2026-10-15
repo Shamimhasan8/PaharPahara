@@ -321,10 +321,26 @@ function ReportDiffDrawer({
 
   const allKeys = Array.from(new Set([...Object.keys(leftSnap), ...Object.keys(rightSnap)])).sort()
 
-  const fmtVal = (v: unknown): string => {
-    if (v === null || v === undefined) return '—'
-    if (typeof v === 'object') return JSON.stringify(v).slice(0, 60) + (JSON.stringify(v).length > 60 ? '…' : '')
-    return String(v)
+  const fmtVal = (v: unknown): { text: string; full?: string; truncated: boolean } => {
+    if (v === null || v === undefined) return { text: '—', truncated: false }
+    if (typeof v === 'object') {
+      const full = JSON.stringify(v)
+      const truncated = full.length > 60
+      return { text: truncated ? full.slice(0, 60) + '…' : full, full: truncated ? full : undefined, truncated }
+    }
+    const s = String(v)
+    const truncated = s.length > 80
+    return { text: truncated ? s.slice(0, 80) + '…' : s, full: truncated ? s : undefined, truncated }
+  }
+
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set())
+  const toggleKey = (key: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
   }
 
   return (
@@ -358,15 +374,30 @@ function ReportDiffDrawer({
             {allKeys.map((key) => {
               const lv = fmtVal(leftSnap[key])
               const rv = fmtVal(rightSnap[key])
-              const changed = lv !== rv
+              const changed = lv.text !== rv.text
+              const isExpanded = expandedKeys.has(key)
+              const canExpand = lv.truncated || rv.truncated
               return (
                 <div key={key} className="contents">
-                  <div className={`font-mono text-[10px] py-1.5 ${changed ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{key}</div>
-                  <div className={`py-1.5 px-2 rounded ${changed ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200 line-through' : 'text-muted-foreground'}`}>
-                    {lv}
+                  <div
+                    className={`font-mono text-[10px] py-1.5 flex items-center gap-1 ${changed ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+                  >
+                    {key}
+                    {canExpand && (
+                      <button
+                        onClick={() => toggleKey(key)}
+                        className="text-[8px] text-primary hover:text-primary/80 shrink-0"
+                        title={isExpanded ? (lang === 'en' ? 'Collapse' : 'সংকুচিত') : (lang === 'en' ? 'Expand' : 'বিস্তৃত')}
+                      >
+                        {isExpanded ? '−' : '+'}
+                      </button>
+                    )}
                   </div>
-                  <div className={`py-1.5 px-2 rounded ${changed ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 font-medium' : 'text-muted-foreground'}`}>
-                    {rv}
+                  <div className={`py-1.5 px-2 rounded text-[10px] break-all ${changed ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-200 line-through' : 'text-muted-foreground'}`}>
+                    {isExpanded && lv.full ? lv.full : lv.text}
+                  </div>
+                  <div className={`py-1.5 px-2 rounded text-[10px] break-all ${changed ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-200 font-medium' : 'text-muted-foreground'}`}>
+                    {isExpanded && rv.full ? rv.full : rv.text}
                   </div>
                 </div>
               )

@@ -155,9 +155,21 @@ export async function GET(req: Request) {
     }
   }
 
-  // Sort by timestamp desc, take limit
-  items.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-  const limited = items.slice(0, limit)
+  // Deduplicate by (action + target/timestamp + category) — if the same event
+  // appears in both audit logs and notifications, keep only the first occurrence.
+  const seen = new Set<string>()
+  const deduped = items.filter((item) => {
+    // Create a dedup key from action + timestamp rounded to the second + category
+    const ts = new Date(item.timestamp).getTime()
+    const key = `${item.action}|${Math.floor(ts / 1000)}|${item.category}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 
-  return NextResponse.json({ items: limited, total: items.length })
+  // Sort by timestamp desc, take limit
+  deduped.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+  const limited = deduped.slice(0, limit)
+
+  return NextResponse.json({ items: limited, total: deduped.length })
 }

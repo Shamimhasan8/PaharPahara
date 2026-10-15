@@ -21,6 +21,7 @@ import {
   Cog,
   ScrollText,
   Zap,
+  Download,
   type LucideIcon,
 } from 'lucide-react'
 import type { Lang } from '@/lib/i18n'
@@ -103,9 +104,20 @@ export function ActivityFeed({ lang, height = 360 }: Props) {
               <CardDescription className="text-[10px]">{items.length} {lang === 'en' ? 'recent events' : 'সাম্প্রতিক ইভেন্ট'}</CardDescription>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[9px] text-muted-foreground uppercase tracking-wide">{lang === 'en' ? 'Live' : 'লাইভ'}</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open('/api/activity-feed/export-csv', '_blank')}
+              className="h-7 px-2 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+              title={lang === 'en' ? 'Export as CSV' : 'CSV হিসেবে রপ্তানি'}
+            >
+              <Download className="h-3 w-3" />
+            </Button>
+            <div className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] text-muted-foreground uppercase tracking-wide">{lang === 'en' ? 'Live' : 'লাইভ'}</span>
+            </div>
           </div>
         </div>
         {/* Category filters */}

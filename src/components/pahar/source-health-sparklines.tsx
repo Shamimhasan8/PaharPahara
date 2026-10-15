@@ -4,6 +4,7 @@
 // Renders a 14-day mini trend chart per source adapter showing access-state history.
 
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TrendingUp, Loader2 } from 'lucide-react'
@@ -97,45 +98,87 @@ export function SourceHealthSparklines({ lang }: Props) {
 }
 
 function Sparkline({ points }: { points: HistoryPoint[] }) {
+  const [hover, setHover] = useState<number | null>(null)
   if (points.length === 0) return null
   const width = 80
   const height = 24
   const stepX = width / (points.length - 1)
   const scoreToY = (score: number) => height - (score / 4) * (height - 4) - 2
 
-  // Build path
-  const pathD = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${i * stepX} ${scoreToY(p.score)}`)
-    .join(' ')
-
   // Build colored segments
-  const segments: Array<{ d: string; color: string }> = []
+  const segments: Array<{ d: string; color: string; idx: number }> = []
   for (let i = 1; i < points.length; i++) {
     const x1 = (i - 1) * stepX
     const x2 = i * stepX
     const y1 = scoreToY(points[i - 1].score)
     const y2 = scoreToY(points[i].score)
     const color = STATE_COLORS[points[i].state] ?? STATE_COLORS.unavailable
-    segments.push({ d: `M ${x1} ${y1} L ${x2} ${y2}`, color })
+    segments.push({ d: `M ${x1} ${y1} L ${x2} ${y2}`, color, idx: i })
   }
 
+  const lastPoint = points[points.length - 1]
+  const hoverPoint = hover != null ? points[hover] : null
+
   return (
-    <svg width={width} height={height} className="shrink-0">
-      {/* Baseline */}
-      <line x1="0" y1={height - 2} x2={width} y2={height - 2} stroke="oklch(0.85 0.02 150)" strokeWidth="0.5" />
-      {/* Colored segments */}
-      {segments.map((s, i) => (
-        <path key={i} d={s.d} stroke={s.color} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      ))}
-      {/* Current state dot */}
-      <circle
-        cx={width}
-        cy={scoreToY(points[points.length - 1].score)}
-        r="2.5"
-        fill={STATE_COLORS[points[points.length - 1].state] ?? STATE_COLORS.unavailable}
-        stroke="white"
-        strokeWidth="1"
-      />
-    </svg>
+    <div className="relative shrink-0">
+      <svg
+        width={width}
+        height={height}
+        className="shrink-0"
+        onMouseLeave={() => setHover(null)}
+      >
+        {/* Baseline */}
+        <line x1="0" y1={height - 2} x2={width} y2={height - 2} stroke="oklch(0.85 0.02 150)" strokeWidth="0.5" />
+        {/* Colored segments */}
+        {segments.map((s) => (
+          <path
+            key={s.idx}
+            d={s.d}
+            stroke={s.color}
+            strokeWidth="1.5"
+            fill="none"
+            strokeLinecap="round"
+          />
+        ))}
+        {/* Hover hit areas (invisible rectangles per data point) */}
+        {points.map((p, i) => (
+          <rect
+            key={i}
+            x={i * stepX - stepX / 2}
+            y={0}
+            width={stepX}
+            height={height}
+            fill="transparent"
+            onMouseEnter={() => setHover(i)}
+          />
+        ))}
+        {/* Current state dot */}
+        <circle
+          cx={width}
+          cy={scoreToY(lastPoint.score)}
+          r="2.5"
+          fill={STATE_COLORS[lastPoint.state] ?? STATE_COLORS.unavailable}
+          stroke="white"
+          strokeWidth="1"
+        />
+        {/* Hover indicator */}
+        {hover != null && hoverPoint && (
+          <circle
+            cx={hover * stepX}
+            cy={scoreToY(hoverPoint.score)}
+            r="3"
+            fill="white"
+            stroke={STATE_COLORS[hoverPoint.state] ?? STATE_COLORS.unavailable}
+            strokeWidth="1.5"
+          />
+        )}
+      </svg>
+      {/* Tooltip */}
+      {hover != null && hoverPoint && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-foreground text-background text-[8px] font-mono whitespace-nowrap pointer-events-none z-10">
+          {hoverPoint.date}: {hoverPoint.state.replace(/_/g, ' ')}
+        </div>
+      )}
+    </div>
   )
 }
