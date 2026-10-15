@@ -440,3 +440,64 @@ Rounds 1-4 established a fully functional prototype with case review workflow, b
 8. **Activity feed widget**: A real-time feed of all system events (case opened, job completed, BMD alert) on the dashboard.
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 6 — webDevReview (cron job 461689, 2026-10-16 00:50 BST)
+
+### Current project status description / assessment
+Rounds 1-5 established a fully functional prototype with case review workflow, bilingual reports, command palette, audit log, expandable sources, case + site comparison, keyboard shortcuts, report version diff, case lifecycle timeline, bookmarkable URL hash, bulk case actions, date-range filter, dashboard JSON export, and notification category settings. Server healthy (HTTP 200, no console errors). This round focused on (a) adding the activity feed widget, (b) source health sparklines, and (c) bulk action results breakdown dialog.
+
+### Completed modifications / verification results
+
+**New feature: Activity feed widget**
+- New `/api/activity-feed` endpoint: aggregates recent events from multiple sources into a single chronological feed — audit logs (sign-in, case_reviewed, report_requested), jobs (state changes), notifications, case detections, BMD bulletins. Returns a unified, time-sorted list (max 40 items).
+- New `ActivityFeed` component (`/src/components/pahar/activity-feed.tsx`):
+  - Card with "Live" indicator (pulsing green dot) + category filter pills (All, Cases, Jobs, BMD, Auth, Reports) with counts.
+  - Vertical timeline with colored severity nodes (info/success/warning/error), category icons, actor name, relative time, and category badge per entry.
+  - Auto-refreshes every 30s.
+  - Scrollable (max-h-320px) with custom scrollbar.
+- Integrated into the dashboard as a new row below the Sources/Jobs panels, side-by-side with the SourceHealthSparklines.
+- Verified: activity feed shows 16 recent events with category filters working.
+
+**New feature: Source health sparklines**
+- New `/api/sources/health-history` endpoint: synthesizes a 14-day access-state history per source adapter (deterministic based on adapter name + day, ending at the current state). In production this would be backed by a SourceHealthHistory table.
+- New `SourceHealthSparklines` component (`/src/components/pahar/source-health-sparklines.tsx`):
+  - Card with "Source health trends (14 days)" title + color legend.
+  - Per-adapter row with adapter name, current access-state badge, last-checked time, and a 80×24px SVG sparkline.
+  - Sparkline renders colored segments (green=live, blue=replay, amber=stale, red=unavailable) + a current-state dot.
+- Integrated into the dashboard next to the ActivityFeed.
+- Verified: 10 sparklines rendered (one per source adapter).
+
+**New feature: Bulk action results breakdown dialog**
+- Updated `BulkActionDialog` in CasesView:
+  - After applying a bulk action, the dialog now shows a per-case results breakdown panel with green check / red alert icons per case, case key, and new status (success) or error message (failure).
+  - Footer switches from Cancel/Apply to a summary (N succeeded, M failed) + Done button.
+  - Results panel is scrollable (max-h-200px) with dividers.
+- Verified: bulk dialog shows preview, decision dropdown, rationale textarea; results breakdown appears after applying.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Dashboard shows Activity feed (16 events, category filters, live indicator) + Source health trends (10 sparklines) side-by-side.
+  - ✓ Bulk action dialog shows preview, decision dropdown, rationale textarea.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **Source health history is synthesized**: The 14-day history is deterministically generated for the prototype. A production version would need a SourceHealthHistory table with real access-state changes logged over time.
+2. **Activity feed doesn't deduplicate**: If the same event appears in both audit logs and notifications, it shows twice. Could add deduplication by action+target+timestamp.
+3. **Sparkline tooltip**: Hovering a sparkline point could show the date + state for that day.
+
+**Recommended next-phase work:**
+1. **WebSocket live updates**: Replace 30s/60s polling with a socket.io mini-service for real-time activity feed + BMD alerts.
+2. **Print stylesheet extraction**: Move inline printable-report CSS to a shared stylesheet.
+3. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+4. **Dashboard data import**: Let users import a JSON file to restore a previous dashboard state.
+5. **Case timeline mobile stacking**: The 5-stage horizontal timeline could stack vertically on mobile.
+6. **Report diff drawer "show full"**: Add expand for truncated object values.
+7. **Activity feed export**: Add a "Download feed as CSV" button for compliance/audit purposes.
+8. **Source health history table**: Add a real SourceHealthHistory Prisma model + seed historical data + log changes when access state flips.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers, Search, X, Link2, Calendar, CheckSquare, Zap } from 'lucide-react'
+import { Loader2, FileText, AlertTriangle, ShieldCheck, History, ChevronRight, ArrowLeft, Lock, Fingerprint, Activity, Layers, Search, X, Link2, Calendar, CheckSquare, Zap, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { CaseDTO, DashboardDataDTO, Role } from '@/lib/types/dto'
@@ -340,6 +340,8 @@ function BulkActionDialog({
   const [permitStatus, setPermitStatus] = useState('unverified')
   const [nextAction, setNextAction] = useState('')
 
+  const [results, setResults] = useState<{ succeeded: number; failed: number; results: Array<{ caseId: string; caseKey: string; ok: boolean; error?: string; newStatus?: string }> } | null>(null)
+
   const bulkMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch('/api/cases/bulk-review', {
@@ -354,13 +356,13 @@ function BulkActionDialog({
       }
       return res.json()
     },
-    onSuccess: (data: { succeeded: number; failed: number }) => {
+    onSuccess: (data: { succeeded: number; failed: number; results: Array<{ caseId: string; caseKey: string; ok: boolean; error?: string; newStatus?: string }> }) => {
+      setResults(data)
       toast.success(
         lang === 'en'
           ? `Bulk action applied: ${data.succeeded} succeeded, ${data.failed} failed`
           : `বাল্ক কর্ম প্রয়োগ: ${data.succeeded} সফল, ${data.failed} ব্যর্থ`,
       )
-      onSuccess()
     },
     onError: (e: Error) => toast.error(e.message),
   })
@@ -498,22 +500,74 @@ function BulkActionDialog({
               </div>
             </>
           )}
+
+          {/* Results breakdown after bulk action */}
+          {results && (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-2.5 py-1.5 bg-muted/40 border-b border-border" lang={lang}>
+                {lang === 'en' ? 'Per-case results' : 'প্রতি-কেস ফলাফল'}
+              </div>
+              <div className="max-h-[200px] overflow-y-auto scroll-thin divide-y divide-border/50">
+                {results.results.map((r) => (
+                  <div key={r.caseId} className="flex items-start gap-2 px-2.5 py-1.5 text-[11px]">
+                    {r.ok ? (
+                      <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-3 w-3 text-rose-500 shrink-0 mt-0.5" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-[10px] font-medium truncate">{r.caseKey}</div>
+                      {r.ok ? (
+                        <div className="text-[9px] text-emerald-600 dark:text-emerald-300 capitalize">
+                          → {r.newStatus?.replace(/_/g, ' ')}
+                        </div>
+                      ) : (
+                        <div className="text-[9px] text-rose-600 dark:text-rose-300">{r.error}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="p-3 border-t border-border flex items-center justify-between gap-2">
-          <div className="text-[10px] text-muted-foreground" lang={lang}>
-            {lang === 'en' ? 'Each case is validated individually; failures do not abort the batch.' : 'প্রতিটি কেস আলাদাভাবে যাচাই; ব্যর্থতা ব্যাচ বাতিল করে না।'}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={onClose} className="h-8">
-              {lang === 'en' ? 'Cancel' : 'বাতিল'}
-            </Button>
-            {decisionOptions.length > 0 && (
-              <Button size="sm" onClick={onSubmit} disabled={bulkMutation.isPending} className="h-8">
-                {bulkMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
-                {lang === 'en' ? `Apply to ${caseIds.length}` : `${caseIds.length} এ প্রয়োগ`}
+          {results ? (
+            <>
+              <div className="text-[10px] text-muted-foreground flex items-center gap-3" lang={lang}>
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-300">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {results.succeeded} {lang === 'en' ? 'succeeded' : 'সফল'}
+                </span>
+                {results.failed > 0 && (
+                  <span className="flex items-center gap-1 text-rose-600 dark:text-rose-300">
+                    <AlertCircle className="h-3 w-3" />
+                    {results.failed} {lang === 'en' ? 'failed' : 'ব্যর্থ'}
+                  </span>
+                )}
+              </div>
+              <Button size="sm" onClick={onSuccess} className="h-8">
+                {lang === 'en' ? 'Done' : 'সম্পন্ন'}
               </Button>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              <div className="text-[10px] text-muted-foreground" lang={lang}>
+                {lang === 'en' ? 'Each case is validated individually; failures do not abort the batch.' : 'প্রতিটি কেস আলাদাভাবে যাচাই; ব্যর্থতা ব্যাচ বাতিল করে না।'}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={onClose} className="h-8">
+                  {lang === 'en' ? 'Cancel' : 'বাতিল'}
+                </Button>
+                {decisionOptions.length > 0 && (
+                  <Button size="sm" onClick={onSubmit} disabled={bulkMutation.isPending} className="h-8">
+                    {bulkMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
+                    {lang === 'en' ? `Apply to ${caseIds.length}` : `${caseIds.length} এ প্রয়োগ`}
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

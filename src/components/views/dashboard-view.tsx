@@ -7,6 +7,8 @@ import type { DashboardDataDTO, Role } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 import { dict } from '@/lib/i18n'
 import { ChattogramMap } from '@/components/pahar/chattogram-map'
+import { ActivityFeed } from '@/components/pahar/activity-feed'
+import { SourceHealthSparklines } from '@/components/pahar/source-health-sparklines'
 import {
   AccessStateBadge,
   CaseStatusBadge,
@@ -295,6 +297,12 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             ))}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Activity feed + source health sparklines */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        <ActivityFeed lang={lang} height={320} />
+        <SourceHealthSparklines lang={lang} />
       </div>
     </div>
   )
