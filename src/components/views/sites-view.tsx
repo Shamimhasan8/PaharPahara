@@ -71,6 +71,7 @@ export function SitesView({ data, lang, initialSlug, onSelectedChange }: Props) 
               height={420}
               selectedSiteId={selected?.id}
               onSelectSite={(slug) => handleSelect(slug)}
+              enableScrollZoom={true}
             />
           </CardContent>
         </Card>

@@ -117,7 +117,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             <div className="flex items-stretch">
               {/* Left accent stripe */}
               <div className="w-1.5 bg-amber-500 shrink-0" />
-              <div className="flex-1 py-3 px-4 flex items-start gap-3">
+              <div className="flex-1 py-3 px-3 sm:px-4 flex items-start gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
                 <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
                   <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-300" />
                 </div>
@@ -130,10 +130,10 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-amber-800 dark:text-amber-300 mt-0.5 leading-snug" lang={lang}>
+                  <div className="text-xs sm:text-sm text-amber-800 dark:text-amber-300 mt-0.5 leading-snug" lang={lang}>
                     {lang === 'en' ? topAlert.headlineEn : topAlert.headlineBn}
                   </div>
-                  <div className="text-[11px] text-amber-700 dark:text-amber-400 mt-1.5 flex items-center gap-1.5 flex-wrap">
+                  <div className="text-[10px] sm:text-[11px] text-amber-700 dark:text-amber-400 mt-1.5 flex items-center gap-1.5 flex-wrap">
                     <span>{lang === 'en' ? 'Sent' : 'প্রেরিত'}: {fmtDate(topAlert.sentAt, lang)}</span>
                     {topAlert.expiresAt && (
                       <span className="flex items-center gap-1">
@@ -149,7 +149,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
                     )}
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => setTab('preparedness')} className="shrink-0 self-center border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/40">
+                <Button size="sm" variant="outline" onClick={() => setTab('preparedness')} className="shrink-0 self-center border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/40 w-full sm:w-auto">
                   {lang === 'en' ? 'Details' : 'বিস্তারিত'}
                 </Button>
               </div>

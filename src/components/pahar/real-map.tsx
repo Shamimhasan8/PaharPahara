@@ -27,6 +27,7 @@ interface Props {
   selectedSiteId?: string
   onSelectSite?: (slug: string) => void
   height?: number
+  enableScrollZoom?: boolean
 }
 
 export function RealMap(props: Props) {

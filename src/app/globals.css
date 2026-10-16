@@ -201,3 +201,52 @@
   .noprint { display: none !important; }
   body { background: white !important; }
 }
+
+/* Leaflet map z-index fixes (prevent conflicts with sticky header z-30) */
+.leaflet-pane { z-index: 0 !important; }
+.leaflet-tile { z-index: 0 !important; }
+.leaflet-top, .leaflet-bottom { z-index: 400 !important; }
+.leaflet-control { z-index: 400 !important; }
+.leaflet-popup-pane { z-index: 500 !important; }
+.leaflet-marker-pane { z-index: 400 !important; }
+.leaflet-overlay-pane { z-index: 300 !important; }
+.pahar-site-marker { z-index: 400 !important; }
+
+/* Make Leaflet popups match the app's design */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  padding: 4px;
+}
+.leaflet-popup-content {
+  margin: 8px 12px;
+  line-height: 1.4;
+}
+.leaflet-popup-tip {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Layer switcher styling */
+.leaflet-control-layers {
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+}
+.leaflet-control-layers-toggle {
+  width: 36px !important;
+  height: 36px !important;
+}
+.leaflet-control-layers-expanded {
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-family: system-ui, sans-serif !important;
+}
+.leaflet-control-layers label {
+  margin: 4px 0 !important;
+  cursor: pointer;
+}
+
+/* Zoom control styling */
+.leaflet-bar a {
+  border-radius: 4px !important;
+}
