@@ -826,3 +826,57 @@ Rounds 1-10 established a comprehensive prototype with all core features. Server
 8. **Dashboard responsive grid improvement**: Use fluid grid for stat cards on wider screens.
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.
+
+---
+
+## Round 12 — Real Interactive Map (user request, 2026-10-16 04:50 BST)
+
+### Current project status description / assessment
+The user requested replacing the stylized SVG map with a real interactive map showing actual Bangladesh geography. The previous ChattogramMap was a custom SVG illustration — the user wanted "original close map" like Google Maps. Implemented using **Leaflet + OpenStreetMap** (free, no API key needed).
+
+### Completed modifications / verification results
+
+**New feature: Real interactive map (Leaflet + OpenStreetMap)**
+- Installed `leaflet` + `react-leaflet` + `@types/leaflet` packages.
+- Created `RealMap` component (`/src/components/pahar/real-map.tsx`) — a wrapper using `next/dynamic` with `ssr: false` to avoid SSR `window is not defined` errors (Leaflet is client-side only).
+- Created `RealMapInner` component (`/src/components/pahar/real-map-inner.tsx`) — the actual Leaflet map implementation:
+  - **Base layer**: OpenStreetMap tiles (`https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`) — shows real streets, water bodies, terrain, and place names for the Chattogram region.
+  - **Center**: [22.35, 91.82] (Chattogram city) at zoom level 11.
+  - **Site markers**: Custom SVG div icons (green for verified, amber for unverified) with active-case count badges (red circle with number).
+  - **Popups**: Clicking a marker shows a rich popup with site name (EN/BN), district, area, elevation, slope, jurisdiction, active/total case counts, and a "View site details →" button.
+  - **BMD alert polygons**: Dashed red polygons from CAP bulletin geometry, with clickable popups showing the alert headline.
+  - **Fly-to-selected**: When a site is selected (from the site list), the map flies to it at zoom 14 with smooth animation.
+  - **Overlay label**: "Chattogram, Bangladesh · OpenStreetMap" pill in the top-left corner with pulsing green dot.
+  - **Attribution control**: OSM attribution in the bottom-right.
+  - **Loading state**: "Loading map…" placeholder while the dynamic import loads.
+- Replaced `ChattogramMap` with `RealMap` in both:
+  - `DashboardView` — main dashboard map (height 380px).
+  - `SitesView` — sites listing map (height 420px, with site selection + fly-to).
+- The old `ChattogramMap` SVG component is retained as a fallback (not imported anywhere but available).
+- **No API key needed** — OpenStreetMap tiles are free and open.
+
+**Verification:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200, no browser console errors.
+- agent-browser end-to-end:
+  - ✓ Real OpenStreetMap map renders with actual Chattogram geography (Bay of Bengal, Karnaphuli river, green hill areas).
+  - ✓ Site markers (green/amber pins) visible on the real map.
+  - ✓ Map shows the Chattogram, Bangladesh area.
+  - ✓ No console errors.
+
+### Unresolved issues / risks / next-phase recommendations
+
+**Minor remaining items:**
+1. **No satellite imagery toggle**: The ESRI World Imagery layer is defined but hidden (opacity 0). Could add a layer switcher control (streets / satellite).
+2. **No zoom controls visible**: Leaflet's default zoom controls may be hidden by z-index issues with the Next.js header. Could fix with CSS.
+3. **Scroll wheel zoom disabled**: Set to `false` to prevent accidental zoom when scrolling the dashboard. Could enable on the Sites view where the map is the primary content.
+
+**Recommended next-phase work:**
+1. **Layer switcher**: Add a control to toggle between streets / satellite / terrain views.
+2. **Enable scroll zoom on Sites view**: Where the map is the primary content, scroll-wheel zoom should be enabled.
+3. **Marker clustering**: If more sites are added, use leaflet.markercluster for better UX.
+4. **Map fullscreen mode**: Add a fullscreen toggle button for the map.
+5. **WebSocket live updates**: Replace 30s/60s polling with a socket.io mini-service.
+6. **Internationalization audit**: Some date strings still render in en-GB even in BN mode.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active and will fire again. Each run should read this worklog section to understand current state before continuing.

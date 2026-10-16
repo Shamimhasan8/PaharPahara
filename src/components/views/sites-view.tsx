@@ -9,6 +9,7 @@ import type { DashboardDataDTO } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 import { dict } from '@/lib/i18n'
 import { ChattogramMap } from '@/components/pahar/chattogram-map'
+import { RealMap } from '@/components/pahar/real-map'
 import { BeforeAfterSlider } from '@/components/pahar/before-after-slider'
 import { CaseStatusBadge, JurisdictionBadge, fmtDate, fmtDateOnly } from '@/components/pahar/badges'
 import { useQuery } from '@tanstack/react-query'
@@ -62,7 +63,7 @@ export function SitesView({ data, lang, initialSlug, onSelectedChange }: Props) 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChattogramMap
+            <RealMap
               sites={sites}
               bulletins={bulletins}
               cases={cases}

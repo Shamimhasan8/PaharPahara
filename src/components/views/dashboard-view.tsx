@@ -8,6 +8,7 @@ import type { DashboardDataDTO, Role } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 import { dict } from '@/lib/i18n'
 import { ChattogramMap } from '@/components/pahar/chattogram-map'
+import { RealMap } from '@/components/pahar/real-map'
 import { ActivityFeed } from '@/components/pahar/activity-feed'
 import { SourceHealthSparklines } from '@/components/pahar/source-health-sparklines'
 import { DashboardForecastChart } from '@/components/pahar/dashboard-forecast-chart'
@@ -230,7 +231,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             </div>
           </CardHeader>
           <CardContent>
-            <ChattogramMap sites={sites} bulletins={bulletins} cases={cases} lang={lang} height={380} />
+            <RealMap sites={sites} bulletins={bulletins} cases={cases} lang={lang} height={380} />
           </CardContent>
         </Card>
 
