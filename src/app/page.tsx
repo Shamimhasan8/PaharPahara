@@ -38,11 +38,11 @@ import { DashboardSkeleton } from '@/components/pahar/skeletons'
 type Tab = 'dashboard' | 'sites' | 'cases' | 'reports' | 'sources' | 'jobs' | 'preparedness' | 'notifications' | 'audit' | 'compare'
 
 const ROLE_TABS: Record<Role, Tab[]> = {
-  admin: ['dashboard', 'sites', 'cases', 'compare', 'reports', 'sources', 'jobs', 'preparedness', 'notifications', 'audit'],
-  doe_reviewer: ['dashboard', 'sites', 'cases', 'compare', 'reports', 'sources', 'jobs', 'notifications'],
-  forest_officer: ['dashboard', 'sites', 'cases', 'compare', 'reports', 'sources', 'notifications'],
-  preparedness: ['dashboard', 'sites', 'preparedness', 'reports', 'sources', 'notifications'],
-  viewer: ['dashboard', 'sites', 'reports', 'sources'],
+  admin: ['dashboard', 'sites', 'cases', 'reports', 'preparedness', 'notifications', 'audit'],
+  doe_reviewer: ['dashboard', 'sites', 'cases', 'reports', 'notifications'],
+  forest_officer: ['dashboard', 'sites', 'cases', 'reports', 'notifications'],
+  preparedness: ['dashboard', 'sites', 'preparedness', 'reports', 'notifications'],
+  viewer: ['dashboard', 'sites', 'reports'],
 }
 
 export default function Home() {

@@ -278,42 +278,59 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
         </div>
       )}
 
-      {/* Stat cards */}
+      {/* Helper text for beginners */}
+      <div className="text-center text-[11px] text-muted-foreground/60 py-1" lang={lang}>
+        {lang === 'en'
+          ? '🔴 = High risk (action needed) · 🟡 = Moderate risk (monitor) · 🟢 = Low risk (safe) — Click any card to see details'
+          : '🔴 = উচ্চ ঝুঁকি (পদক্ষেপ প্রয়োজন) · 🟡 = মাঝারি ঝুঁকি (নজরদারি) · 🟢 = নিম্ন ঝুঁকি (নিরাপদ) — বিস্তারিত দেখতে যেকোনো কার্ডে ক্লিক করুন'}
+      </div>
+
+      {/* Stat cards — simplified for beginners */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           icon={<Mountain className="h-4 w-4" />}
-          label={t.dashboard.siteStatus}
+          label={lang === 'en' ? 'Hills Monitored' : 'পর্যবেক্ষিত পাহাড়'}
           value={`${sites.length}`}
           sub={
             lang === 'en'
-              ? `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} Environment · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} Forest · ${sites.filter((s) => s.jurisdiction === 'unverified').length} unchecked`
-              : `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} পরিবেশ · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} ফরেস্ট · ${sites.filter((s) => s.jurisdiction === 'unverified').length} অযাচাইকৃত`
+              ? `${sites.filter((s) => s.riskLevel === 'red').length} high risk · ${sites.filter((s) => s.riskLevel === 'yellow').length} moderate`
+              : `${sites.filter((s) => s.riskLevel === 'red').length} উচ্চ ঝুঁকি · ${sites.filter((s) => s.riskLevel === 'yellow').length} মাঝারি`
           }
           color="emerald"
+          onClick={() => setTab('sites')}
         />
         <StatCard
           icon={<FileText className="h-4 w-4" />}
-          label={t.dashboard.activeCases}
+          label={lang === 'en' ? 'Active Incidents' : 'সক্রিয় ঘটনা'}
           value={`${activeCases.length}`}
-          sub={`${cases.length} ${lang === 'en' ? 'total cases' : 'মোট কেস'}`}
+          sub={`${cases.length} ${lang === 'en' ? 'total incidents' : 'মোট ঘটনা'}`}
           color="amber"
           onClick={() => setTab('cases')}
         />
         <StatCard
           icon={<CloudRain className="h-4 w-4" />}
-          label={t.dashboard.rainfall24h}
+          label={lang === 'en' ? 'Rainfall (24h)' : 'বৃষ্টিপাত (২৪ঘা)'}
           value={`${maxRain24h.toFixed(1)} mm`}
-          sub={anyIncomplete ? t.dashboard.incompleteData : (lang === 'en' ? 'As of' : 'হিসাবকাল') + ' ' + fmtDateOnly(sites[0] ? rainfallSummary[sites[0].id]?.asOf : null, lang)}
-          color={anyIncomplete ? 'amber' : 'sky'}
+          sub={anyIncomplete
+            ? (lang === 'en' ? '⚠️ Data incomplete' : '⚠️ তথ্য অসম্পূর্ণ')
+            : (maxRain24h >= 100
+              ? (lang === 'en' ? '🔴 Above danger level' : '🔴 বিপজ্জনক স্তরে')
+              : maxRain24h >= 50
+                ? (lang === 'en' ? '🟡 Approaching warning' : '🟡 সতর্কতা স্তরে')
+                : (lang === 'en' ? '🟢 Normal level' : '🟢 স্বাভাবিক'))
+          }
+          color={maxRain24h >= 100 ? 'rose' : maxRain24h >= 50 ? 'amber' : 'sky'}
           onClick={() => setTab('preparedness')}
         />
         <StatCard
-          icon={<Activity className="h-4 w-4" />}
-          label={t.dashboard.sourceHealth}
-          value={`${liveSources}/${sources.length}`}
-          sub={lang === 'en' ? `${replaySources} historical · ${unavailableSources} offline` : `${replaySources} ঐতিহাসিক · ${unavailableSources} অফলাইন`}
-          color={unavailableSources > 0 ? 'amber' : 'emerald'}
-          onClick={() => setTab('sources')}
+          icon={<ShieldCheck className="h-4 w-4" />}
+          label={lang === 'en' ? 'People at Risk' : 'ঝুঁকিতে মানুষ'}
+          value={(data.riskSummary?.red.population ?? 0).toLocaleString()}
+          sub={lang === 'en'
+            ? `in ${data.riskSummary?.red.count ?? 0} high-risk zones`
+            : `${data.riskSummary?.red.count ?? 0} উচ্চ-ঝুঁকি জোনে`}
+          color="rose"
+          onClick={() => setTab('sites')}
         />
       </div>
 
@@ -376,74 +393,6 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Sources + Jobs mini panels */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base" lang={lang}>{t.dashboard.sourceHealth}</CardTitle>
-              <Button size="sm" variant="ghost" onClick={() => setTab('sources')} className="text-xs" lang={lang}>
-                {t.dashboard.viewAll}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1 max-h-[260px] overflow-y-auto scroll-thin">
-            {sources.map((s) => (
-              <div key={s.id} className="flex items-center justify-between text-xs py-2 border-b border-border/40 last:border-0 gap-2">
-                <div className="font-mono text-[11px] text-foreground truncate flex items-center gap-2 min-w-0">
-                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.accessState === 'live' ? 'bg-emerald-500 animate-pulse' : s.accessState === 'historical_replay' ? 'bg-sky-400' : s.accessState === 'unavailable' ? 'bg-rose-400' : 'bg-amber-400'}`} />
-                  <span className="truncate">{s.adapter}</span>
-                </div>
-                <AccessStateBadge state={s.accessState} lang={lang} />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2" lang={lang}>
-                <TrendingUp className="h-4 w-4 text-primary" />
-                {t.nav.jobs}
-              </CardTitle>
-              <div className="flex items-center gap-1.5">
-                {runningJobs.length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300">
-                    {runningJobs.length} {lang === 'en' ? 'active' : 'সক্রিয়'}
-                  </span>
-                )}
-                {failedJobs.length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                    {failedJobs.length} {lang === 'en' ? 'failed' : 'ব্যর্থ'}
-                  </span>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1 max-h-[260px] overflow-y-auto scroll-thin">
-            {jobs.slice(0, 6).map((j) => (
-              <div key={j.id} className="flex items-center justify-between text-xs py-2 border-b border-border/40 last:border-0 gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="font-mono text-[10px] text-foreground truncate">{j.jobKey}</div>
-                  <div className="text-[9px] text-muted-foreground truncate">{j.jobType} · {relativeTime(j.updatedAt, lang)}</div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <JobStateMini state={j.state} />
-                  <span className="text-[9px] text-muted-foreground capitalize hidden sm:inline">{j.state}</span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Activity feed + source health sparklines */}
-      <div className="grid lg:grid-cols-2 gap-4 items-stretch">
-        <ActivityFeed lang={lang} height={320} />
-        <SourceHealthSparklines lang={lang} />
       </div>
 
       {/* 3-day forecast mini-chart (Chashma Hill) */}
