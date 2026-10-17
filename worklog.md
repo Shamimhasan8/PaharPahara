@@ -1133,3 +1133,21 @@ User requested: (1) Red/Yellow/Green alert system, (2) real-world datasets, (3) 
 - Lint: 0 errors, 0 warnings ✓
 - Console: 0 errors across all 8 tabs ✓
 - VLM confirmed: no demo labels, v1.0 footer, action buttons present, 3 forecast bars visible ✓
+
+---
+
+## Round 19 — Beginner-Friendly Optimization (2026-10-17)
+
+### Changes Made
+1. **Reduced navigation from 8 tabs to 5**: Dashboard, Sites, Cases, Reports, Notifications. Removed Compare, Source Health, Jobs from main nav (still accessible to admin via Audit tab). Technical views hidden from regular users.
+2. **Removed technical panels from dashboard**: Source Health list, Jobs list, Activity Feed, and Source Health Sparklines all removed from the main dashboard. Dashboard now shows ONLY: Risk Zone summary → Helper text → Stat cards → Map + Recent Cases → 3-day Forecast.
+3. **Plain-language stat cards**: "Site Status" → "Hills Monitored", "Active Cases" → "Active Incidents", "Source Health" → replaced with "People at Risk" (shows population in red zones), Rainfall card now shows context ("🔴 Above danger level" / "🟡 Approaching warning" / "🟢 Normal level").
+4. **Helper text**: Added "🔴 = High risk (action needed) · 🟡 = Moderate risk (monitor) · 🟢 = Low risk (safe) — Click any card to see details" below risk zone cards.
+5. **Plain-language subtext**: "Environment" → shows risk counts instead, "total cases" → "total incidents", rainfall shows danger level context.
+
+### Verification
+- Lint: 0 errors ✓
+- Console: 0 errors across all 5 tabs ✓
+- VLM beginner rating: 4/10 → **7/10** (significant improvement)
+- Mobile: 8/10 ✓
+- All features still working end-to-end ✓
