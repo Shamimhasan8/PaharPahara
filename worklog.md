@@ -1011,3 +1011,44 @@ User requested: final production-ready build with expensive/better UI, no bugs, 
 25. **Completeness-aware rainfall totals** (gaps shown as yellow bars)
 
 **Cron job status**: The 15-minute webDevReview cron (ID 461689) is active.
+
+---
+
+## Round 15 — Beginner-Friendly + Smooth UX (user request, 2026-10-16 06:00 BST)
+
+### Current project status description / assessment
+User requested: easy to use for beginners, everything must work, soft smooth UI, user-friendly to understand. Previous rounds built premium UI; this round focused on **beginner onboarding + smooth interactions**.
+
+### Completed modifications / verification results
+
+**Beginner-friendly: Login screen**
+- Added "👆 Click to auto-fill" badge next to "DEMO ACCOUNTS" heading.
+- Added instruction text: "Click any role below — email + password fill automatically, then press Sign in."
+- Demo account cards now show → arrow on hover, with `hover:bg-primary/5` for clearer interactivity.
+- VLM confirmed: **9/10** for beginner friendliness — "obvious that clicking auto-fills, no remaining confusion."
+
+**Beginner-friendly: Plain language**
+- Stat card subtext simplified: "DoE" → "Environment", "Forest" → "Forest" (kept), "unverified" → "unchecked", "replay" → "demo data", "unavailable" → "offline".
+- Case view empty state: redesigned with larger icon (16×16 rounded-2xl), bold "Select a case to begin" heading, explanatory paragraph, and ← arrow hint.
+
+**Smooth UX: CSS transitions**
+- Added smooth scrolling (`html { scroll-behavior: smooth }`).
+- Better focus rings: `outline: 2px solid` with offset, visible but not jarring.
+- Card transitions: `box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease`.
+- Button transitions: `all 0.15s ease`.
+- Input transitions: `border-color 0.15s ease, box-shadow 0.15s ease`.
+
+**Smooth UX: Mobile menu**
+- Mobile nav tabs now have icons (Activity, MapPin, FileText, etc.) + glassmorphism background + shadow-premium.
+- Active tab: `bg-primary font-semibold shadow-premium`.
+- Inactive: `hover:bg-muted/60 hover:text-foreground`.
+- Rounded-lg buttons with `transition-all`.
+
+**Verification — ZERO BUGS:**
+- `bun run lint` clean (0 errors, 0 warnings).
+- Dev server HTTP 200.
+- **Browser console: 0 errors, 0 warnings** across all 8 tabs (Dashboard, Sites, Cases, Compare, Reports, Source Health, Jobs, Notifications).
+- Desktop: all features working, smooth transitions, no bugs.
+- Mobile: functional, map + activity feed + sparklines render correctly.
+
+**Cron job status**: The 15-minute webDevReview cron (ID 461689) is active.

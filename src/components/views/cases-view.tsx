@@ -293,11 +293,22 @@ export function CasesView({ data, lang, role, reload, initialSelectedId, onSelec
         </Card>
 
         <Card className="lg:col-span-2">
-          <CardContent className="py-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground" lang={lang}>
-              {lang === 'en' ? 'Select a case to review evidence and record a decision.' : 'প্রমাণ পর্যালোচনা ও সিদ্ধান্ত লিপিবদ্ধ করতে একটি কেস নির্বাচন করুন।'}
+          <CardContent className="py-16 text-center">
+            <div className="inline-flex h-16 w-16 rounded-2xl bg-primary/10 items-center justify-center mb-4">
+              <FileText className="h-8 w-8 text-primary/60" />
+            </div>
+            <p className="text-base font-medium text-foreground mb-1" lang={lang}>
+              {lang === 'en' ? 'Select a case to begin' : 'শুরু করতে একটি কেস নির্বাচন করুন'}
             </p>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto" lang={lang}>
+              {lang === 'en'
+                ? 'Click any case from the list on the left to view before/after satellite imagery, change metrics, and record your review decision.'
+                : 'পূর্ব/পরবর্তী স্যাটেলাইট চিত্র, পরিবর্তন মেট্রিক্স দেখতে এবং আপনার পর্যালোচনা সিদ্ধান্ত লিপিবদ্ধ করতে বাম দিকের তালিকা থেকে একটি কেসে ক্লিক করুন।'}
+            </p>
+            <div className="flex items-center justify-center gap-2 mt-4 text-[10px] text-muted-foreground/60">
+              <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted font-mono">←</kbd>
+              <span lang={lang}>{lang === 'en' ? 'Click a case from the list' : 'তালিকা থেকে একটি কেসে ক্লিক করুন'}</span>
+            </div>
           </CardContent>
         </Card>
       </div>

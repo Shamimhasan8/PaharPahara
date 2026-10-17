@@ -185,8 +185,8 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           value={`${sites.length}`}
           sub={
             lang === 'en'
-              ? `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} DoE · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} Forest · ${sites.filter((s) => s.jurisdiction === 'unverified').length} unverified`
-              : `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} DoE · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} ফরেস্ট · ${sites.filter((s) => s.jurisdiction === 'unverified').length} অযাচাইকৃত`
+              ? `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} Environment · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} Forest · ${sites.filter((s) => s.jurisdiction === 'unverified').length} unchecked`
+              : `${sites.filter((s) => s.jurisdiction === 'verified_doe').length} পরিবেশ · ${sites.filter((s) => s.jurisdiction === 'verified_forest').length} ফরেস্ট · ${sites.filter((s) => s.jurisdiction === 'unverified').length} অযাচাইকৃত`
           }
           color="emerald"
         />
@@ -194,7 +194,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           icon={<FileText className="h-4 w-4" />}
           label={t.dashboard.activeCases}
           value={`${activeCases.length}`}
-          sub={`${cases.length} ${lang === 'en' ? 'total' : 'মোট'}`}
+          sub={`${cases.length} ${lang === 'en' ? 'total cases' : 'মোট কেস'}`}
           color="amber"
           onClick={() => setTab('cases')}
         />
@@ -210,7 +210,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           icon={<Activity className="h-4 w-4" />}
           label={t.dashboard.sourceHealth}
           value={`${liveSources}/${sources.length}`}
-          sub={lang === 'en' ? `${replaySources} replay · ${unavailableSources} unavailable` : `${replaySources} রিপ্লে · ${unavailableSources} অনুপলব্ধ`}
+          sub={lang === 'en' ? `${replaySources} demo data · ${unavailableSources} offline` : `${replaySources} ডেমো ডেটা · ${unavailableSources} অফলাইন`}
           color={unavailableSources > 0 ? 'amber' : 'emerald'}
           onClick={() => setTab('sources')}
         />

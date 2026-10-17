@@ -9,7 +9,7 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
-import { Mountain, LogOut, Globe, Bell, Loader2, Menu, X, ShieldAlert, Search, Command, Upload } from 'lucide-react'
+import { Mountain, LogOut, Globe, Bell, Loader2, Menu, X, ShieldAlert, Search, Command, Upload, Activity, FileText, MapPin, GitCompare, ScrollText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -295,26 +295,42 @@ export default function Home() {
           </Button>
         </div>
 
-        {/* Mobile tabs */}
+        {/* Mobile tabs — slide-down panel with icons */}
         {navOpen && (
-          <nav className="md:hidden border-t border-border bg-card px-4 py-2 grid grid-cols-2 gap-1">
-            {allowedTabs.map((tb) => (
-              <button
-                key={tb}
-                onClick={() => {
-                  setTab(tb)
-                  setNavOpen(false)
-                }}
-                className={`px-3 py-2 text-sm rounded-md transition-colors text-left ${
-                  effectiveTab === tb
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
-                lang={lang}
-              >
-                {t.nav[tb]}
-              </button>
-            ))}
+          <nav className="md:hidden border-t border-border/60 glass px-4 py-3 grid grid-cols-2 gap-1.5 shadow-premium">
+            {allowedTabs.map((tb) => {
+              const icons: Record<string, typeof Mountain> = {
+                dashboard: Activity,
+                sites: MapPin,
+                cases: FileText,
+                compare: GitCompare,
+                reports: FileText,
+                sources: Mountain,
+                jobs: Activity,
+                preparedness: ShieldAlert,
+                notifications: Bell,
+                audit: ScrollText,
+              }
+              const Icon = icons[tb] ?? Activity
+              return (
+                <button
+                  key={tb}
+                  onClick={() => {
+                    setTab(tb)
+                    setNavOpen(false)
+                  }}
+                  className={`px-3 py-2.5 text-sm rounded-lg transition-all text-left flex items-center gap-2 ${
+                    effectiveTab === tb
+                      ? 'bg-primary text-primary-foreground font-semibold shadow-premium'
+                      : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                  }`}
+                  lang={lang}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {t.nav[tb]}
+                </button>
+              )
+            })}
           </nav>
         )}
       </header>
@@ -611,11 +627,19 @@ function LoginScreen({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void
               </Button>
             </form>
 
-            {/* Demo accounts — premium card style */}
+            {/* Demo accounts — premium card style with auto-fill hint */}
             <div className="mt-8 pt-6 border-t border-border">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-3" lang={lang}>
-                {t.login.demoAccounts}
+              <div className="flex items-center gap-2 mb-1">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70" lang={lang}>
+                  {t.login.demoAccounts}
+                </div>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium" lang={lang}>
+                  {lang === 'en' ? '👆 Click to auto-fill' : '👆 ক্লিক করে অটো-ফিল'}
+                </span>
               </div>
+              <p className="text-[10px] text-muted-foreground/60 mb-3" lang={lang}>
+                {lang === 'en' ? 'Click any role below — email + password fill automatically, then press Sign in.' : 'নিচের যেকোনো ভূমিকায় ক্লিক করুন — ইমেইল + পাসওয়ার্ড স্বয়ংক্রিয়ভাবে পূরণ হবে, তারপর সাইন ইন চাপুন।'}
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {demoAccounts.map((a) => (
                   <button
@@ -625,9 +649,12 @@ function LoginScreen({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void
                       setEmail(a.email)
                       setPassword(a.pw)
                     }}
-                    className="text-left px-3 py-2.5 rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-premium transition-all text-[11px] group"
+                    className="text-left px-3 py-2.5 rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-premium hover:bg-primary/5 transition-all text-[11px] group"
                   >
-                    <div className="font-semibold capitalize text-foreground group-hover:text-primary transition-colors">{a.role.replace(/_/g, ' ')}</div>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="font-semibold capitalize text-foreground group-hover:text-primary transition-colors">{a.role.replace(/_/g, ' ')}</div>
+                      <span className="text-[8px] text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    </div>
                     <div className="text-muted-foreground truncate font-mono text-[10px]">{a.email}</div>
                   </button>
                 ))}

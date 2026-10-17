@@ -130,6 +130,25 @@
     font-family: var(--font-noto-bengali), var(--font-geist-sans), system-ui, sans-serif;
     font-feature-settings: normal;
   }
+  /* Smooth scrolling */
+  html { scroll-behavior: smooth; }
+  /* Better focus rings — visible but not jarring */
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [role=button]:focus-visible {
+    outline: 2px solid oklch(0.38 0.08 152 / 0.5);
+    outline-offset: 2px;
+  }
+  /* Smooth card transitions */
+  [data-slot="card"] {
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  }
+  /* Smooth button transitions */
+  [data-slot="button"] {
+    transition: all 0.15s ease;
+  }
+  /* Smooth input transitions */
+  input, select, textarea {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
 }
 
 /* Premium card shadows */
