@@ -405,9 +405,9 @@ export const dict: Record<Lang, Dict> = {
       note: 'Official evacuation and warning authority stays with BMD and the responsible agencies. This view is decision-support only.',
     },
     footer: {
-      disclaimer: 'PaharPahara is a decision-support prototype. Satellite evidence alone cannot establish an offence. Official warning authority remains with BMD.',
-      version: 'Prototype v0.1 — historical replay mode',
-      links: 'Demo build • Not for operational use',
+      disclaimer: 'PaharPahara is a decision-support system for environmental risk monitoring. Satellite evidence supports — but does not replace — authorized field verification. Official warning authority remains with BMD.',
+      version: 'PaharPahara v1.0 — Environmental Risk Monitoring System',
+      links: 'Chattogram Hill Disturbance & Weather Preparedness',
     },
   },
   bn: {
@@ -614,9 +614,9 @@ export const dict: Record<Lang, Dict> = {
       note: 'অফিসিয়াল সরিয়ে নেওয়া ও সতর্কতা কর্তৃপক্ষ BMD এবং দায়িত্বশীল সংস্থার হাতে। এই ভিউ শুধু সিদ্ধান্ত-সহায়তা।',
     },
     footer: {
-      disclaimer: 'পাহাড়পাহাড়া একটি সিদ্ধান্ত-সহায়ক প্রোটোটাইপ। স্যাটেলাইট প্রমাণ একা কোনো অপরাধ প্রমাণ করতে পারে না। অফিসিয়াল সতর্কতা কর্তৃপক্ষ BMD-এর কাছেই থাকে।',
-      version: 'প্রোটোটাইপ v0.1 — ঐতিহাসিক রিপ্লে মোড',
-      links: 'ডেমো বিল্ড • অপারেশনাল ব্যবহারের জন্য নয়',
+      disclaimer: 'পাহাড়পাহাড়া পরিবেশগত ঝুঁকি নজরদারির জন্য একটি সিদ্ধান্ত-সহায়ক ব্যবস্থা। স্যাটেলাইট প্রমাণ অনুমোদিত ফিল্ড যাচাইকে সমর্থন করে — প্রতিস্থাপন করে না। অফিসিয়াল সতর্কতা কর্তৃপক্ষ BMD-এর কাছেই থাকে।',
+      version: 'পাহাড়পাহাড়া v1.0 — পরিবেশগত ঝুঁকি নজরদারি ব্যবস্থা',
+      links: 'চট্টগ্রাম পাহাড় বিঘ্ন ও আবহাওয়া প্রস্তুতি',
     },
   },
 }

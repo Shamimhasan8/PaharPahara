@@ -80,14 +80,14 @@ export function DashboardForecastChart({ siteId, siteName, lang }: Props) {
             {lang === 'en' ? 'No forecast data.' : 'কোনো পূর্বাভাস ডেটা নেই।'}
           </div>
         ) : (
-          <div className="w-full" style={{ height: 140 }}>
+          <div className="w-full" style={{ height: 160 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 5, right: 8, left: -20, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }} barSize={60}>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.90 0.01 150)" />
-                <XAxis dataKey="label" tick={{ fontSize: 9 }} stroke="oklch(0.50 0.02 150)" />
-                <YAxis tick={{ fontSize: 9 }} stroke="oklch(0.50 0.02 150)" label={{ value: 'mm', angle: -90, position: 'insideLeft', style: { fontSize: 9 } }} />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fontWeight: 500 }} stroke="oklch(0.50 0.02 150)" />
+                <YAxis tick={{ fontSize: 9 }} stroke="oklch(0.50 0.02 150)" width={28} />
                 <Tooltip
-                  contentStyle={{ fontSize: 10, borderRadius: 6, border: '1px solid oklch(0.85 0.02 150)' }}
+                  contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid oklch(0.85 0.02 150)' }}
                   formatter={(v: number) => [`${v.toFixed(1)} mm`, lang === 'en' ? 'Forecast' : 'পূর্বাভাস']}
                 />
                 <ReferenceLine y={100} stroke="oklch(0.55 0.20 25)" strokeDasharray="4 2" label={{ value: 'YPSA 100mm', fontSize: 8, fill: 'oklch(0.55 0.20 25)', position: 'insideTopRight' }} />

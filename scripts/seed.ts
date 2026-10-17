@@ -803,11 +803,19 @@ async function main() {
   }
 
   const fcStart = new Date('2026-07-08T06:00:00Z')
+  // 72 hours of forecast (3 days) — realistic monsoon pattern
   const fcRates = [
+    // Day 1 (Jul 8): heavy rainfall
     0.0, 0.0, 0.1, 0.2, 0.4, 0.8, 1.5, 2.4, 3.6, 4.8, 5.5, 6.2,
     5.9, 4.7, 3.2, 2.0, 1.1, 0.6, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0,
+    // Day 2 (Jul 9): moderate rainfall
+    0.0, 0.0, 0.0, 0.1, 0.2, 0.5, 1.0, 1.8, 2.5, 3.2, 3.8, 4.1,
+    3.6, 2.8, 2.0, 1.4, 0.9, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0,
+    // Day 3 (Jul 10): light rain tapering off
+    0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.4, 0.7, 1.0, 1.3, 1.5, 1.4,
+    1.2, 0.9, 0.6, 0.4, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0,
   ]
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 72; i++) {
     const start = new Date(fcStart.getTime() + i * 60 * 60 * 1000)
     const end = new Date(start.getTime() + 60 * 60 * 1000)
     await db.weatherInterval.create({
@@ -824,7 +832,7 @@ async function main() {
       },
     })
   }
-  console.log('Seeded weather intervals (IMERG 48 + Open-Meteo 24)')
+  console.log('Seeded weather intervals (IMERG 48 + Open-Meteo 72)')
 
   // ---------- BMD CAP bulletins ----------
   await db.bulletin.create({

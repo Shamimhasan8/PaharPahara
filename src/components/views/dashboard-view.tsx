@@ -311,7 +311,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           icon={<Activity className="h-4 w-4" />}
           label={t.dashboard.sourceHealth}
           value={`${liveSources}/${sources.length}`}
-          sub={lang === 'en' ? `${replaySources} demo data · ${unavailableSources} offline` : `${replaySources} ডেমো ডেটা · ${unavailableSources} অফলাইন`}
+          sub={lang === 'en' ? `${replaySources} historical · ${unavailableSources} offline` : `${replaySources} ঐতিহাসিক · ${unavailableSources} অফলাইন`}
           color={unavailableSources > 0 ? 'amber' : 'emerald'}
           onClick={() => setTab('sources')}
         />
@@ -342,10 +342,9 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
           </CardHeader>
           <CardContent className="space-y-2 max-h-[400px] overflow-y-auto scroll-thin">
             {cases.slice(0, 6).map((c) => (
-              <button
+              <div
                 key={c.id}
-                onClick={() => setTab('cases')}
-                className="w-full text-left p-2.5 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors group"
+                className="p-2.5 rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-premium transition-all group"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -359,7 +358,16 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
                   </div>
                   <CaseStatusBadge status={c.status} lang={lang} />
                 </div>
-              </button>
+                <button
+                  onClick={() => setTab('cases')}
+                  className="mt-2 w-full text-[10px] font-medium text-primary hover:text-primary/80 py-1 rounded border border-primary/20 hover:bg-primary/5 transition-all"
+                  lang={lang}
+                >
+                  {c.status === 'reviewed' || c.status === 'rejected'
+                    ? (lang === 'en' ? 'View details →' : 'বিস্তারিত দেখুন →')
+                    : (lang === 'en' ? 'Review now →' : 'এখন পর্যালোচনা →')}
+                </button>
+              </div>
             ))}
             {cases.length === 0 && (
               <div className="text-center text-sm text-muted-foreground py-8" lang={lang}>
