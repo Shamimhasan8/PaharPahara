@@ -67,6 +67,7 @@ export function SitesView({ data, lang, initialSlug, onSelectedChange }: Props) 
               sites={sites}
               bulletins={bulletins}
               cases={cases}
+              riskZones={data.riskZones}
               lang={lang}
               height={420}
               selectedSiteId={selected?.id}
@@ -92,11 +93,25 @@ export function SitesView({ data, lang, initialSlug, onSelectedChange }: Props) 
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-sm group-hover:text-primary" lang={lang}>
+                      <div className="font-semibold text-sm group-hover:text-primary flex items-center gap-1.5" lang={lang}>
+                        {s.riskLevel === 'red' && <span className="text-xs">🔴</span>}
+                        {s.riskLevel === 'yellow' && <span className="text-xs">🟡</span>}
+                        {s.riskLevel === 'green' && <span className="text-xs">🟢</span>}
                         {lang === 'en' ? s.nameEn : s.nameBn}
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-0.5">{s.district} • {s.areaHectares.toFixed(1)} ha • {s.elevationM} m</div>
                       <div className="flex items-center gap-1.5 mt-1.5">
+                        {s.riskLevel && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                            s.riskLevel === 'red' ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300' :
+                            s.riskLevel === 'yellow' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' :
+                            'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                          }`}>
+                            {s.riskLevel === 'red' ? (lang === 'en' ? 'High Risk' : 'উচ্চ ঝুঁকি') :
+                             s.riskLevel === 'yellow' ? (lang === 'en' ? 'Moderate' : 'মাঝারি') :
+                             (lang === 'en' ? 'Safe' : 'নিরাপদ')}
+                          </span>
+                        )}
                         <JurisdictionBadge jurisdiction={s.jurisdiction} lang={lang} />
                         {activeCases.length > 0 && (
                           <Badge variant="outline" className="text-[10px] bg-amber-50 border-amber-200 text-amber-700">

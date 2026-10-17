@@ -177,6 +177,107 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
         </Card>
       )}
 
+      {/* Risk Zone Summary — Red/Yellow/Green alert system */}
+      {data.riskSummary && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Red Zone */}
+          <div
+            className="rounded-xl p-4 border-2 border-red-300 dark:border-red-800 shadow-premium cursor-pointer hover:shadow-premium-hover transition-all"
+            style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03))' }}
+            onClick={() => setTab('sites')}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                  <span className="text-red-600 dark:text-red-300 text-lg">🔴</span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-red-700 dark:text-red-300" lang={lang}>
+                    {lang === 'en' ? 'Red Zone' : 'লাল জোন'}
+                  </div>
+                  <div className="text-[10px] text-red-600/70 dark:text-red-400/70" lang={lang}>
+                    {lang === 'en' ? 'High Risk — Danger' : 'উচ্চ ঝুঁকি — বিপজ্জনক'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-red-700 dark:text-red-300 tabular-nums">
+                {data.riskSummary.red.count}
+              </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {data.riskSummary.red.areaHectares.toFixed(1)} ha {lang === 'en' ? 'at risk' : 'ঝুঁকিতে'}
+              {data.riskSummary.red.population > 0 && (
+                <span> · {data.riskSummary.red.population.toLocaleString()} {lang === 'en' ? 'people' : 'জন'}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Yellow Zone */}
+          <div
+            className="rounded-xl p-4 border-2 border-amber-300 dark:border-amber-800 shadow-premium cursor-pointer hover:shadow-premium-hover transition-all"
+            style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03))' }}
+            onClick={() => setTab('sites')}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                  <span className="text-amber-600 dark:text-amber-300 text-lg">🟡</span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-300" lang={lang}>
+                    {lang === 'en' ? 'Yellow Zone' : 'হলুদ জোন'}
+                  </div>
+                  <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70" lang={lang}>
+                    {lang === 'en' ? 'Moderate Risk — Monitor' : 'মাঝারি ঝুঁকি — নজরদারি'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                {data.riskSummary.yellow.count}
+              </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {data.riskSummary.yellow.areaHectares.toFixed(1)} ha {lang === 'en' ? 'monitored' : 'পর্যবেক্ষিত'}
+              {data.riskSummary.yellow.population > 0 && (
+                <span> · {data.riskSummary.yellow.population.toLocaleString()} {lang === 'en' ? 'people' : 'জন'}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Green Zone */}
+          <div
+            className="rounded-xl p-4 border-2 border-emerald-300 dark:border-emerald-800 shadow-premium cursor-pointer hover:shadow-premium-hover transition-all"
+            style={{ background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.03))' }}
+            onClick={() => setTab('sites')}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                  <span className="text-emerald-600 dark:text-emerald-300 text-lg">🟢</span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300" lang={lang}>
+                    {lang === 'en' ? 'Green Zone' : 'সবুজ জোন'}
+                  </div>
+                  <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70" lang={lang}>
+                    {lang === 'en' ? 'Low Risk — Safe' : 'নিম্ন ঝুঁকি — নিরাপদ'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                {data.riskSummary.green.count}
+              </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {data.riskSummary.green.areaHectares.toFixed(1)} ha {lang === 'en' ? 'safe area' : 'নিরাপদ এলাকা'}
+              {data.riskSummary.green.population > 0 && (
+                <span> · {data.riskSummary.green.population.toLocaleString()} {lang === 'en' ? 'people' : 'জন'}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
@@ -231,7 +332,7 @@ export function DashboardView({ data, lang, role, setTab }: Props) {
             </div>
           </CardHeader>
           <CardContent>
-            <RealMap sites={sites} bulletins={bulletins} cases={cases} lang={lang} height={380} />
+            <RealMap sites={sites} bulletins={bulletins} cases={cases} riskZones={data.riskZones} lang={lang} height={380} />
           </CardContent>
         </Card>
 

@@ -20,6 +20,33 @@ export interface SiteDTO {
   slopeMaxDeg: number | null
   jurisdiction: string
   verificationSrc: string | null
+  riskLevel?: string // red | yellow | green
+  riskScore?: number // 0-100
+  riskReasonsJson?: string | null
+}
+
+export interface RiskZoneDTO {
+  id: string
+  siteId: string | null
+  siteNameEn: string | null
+  siteNameBn: string | null
+  siteSlug: string | null
+  nameEn: string
+  nameBn: string
+  geometryJson: string
+  level: string // red | yellow | green
+  areaHectares: number
+  reasonEn: string
+  reasonBn: string
+  factorsJson: string | null
+  populationEstimate: number | null
+  source: string
+}
+
+export interface RiskSummaryDTO {
+  red: { count: number; areaHectares: number; population: number }
+  yellow: { count: number; areaHectares: number; population: number }
+  green: { count: number; areaHectares: number; population: number }
 }
 
 export interface RawAssetDTO {
@@ -169,4 +196,6 @@ export interface DashboardDataDTO {
   jobs: JobDTO[]
   notifications: NotificationDTO[]
   rainfallSummary: Record<string, { total24h: number; total72h: number; complete: boolean; asOf: string | null }>
+  riskZones?: RiskZoneDTO[]
+  riskSummary?: RiskSummaryDTO
 }

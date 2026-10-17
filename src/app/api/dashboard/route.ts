@@ -22,7 +22,7 @@ export async function GET() {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  const [sites, sources, bulletins, jobs, notifications, cases, weather] = await Promise.all([
+  const [sites, sources, bulletins, jobs, notifications, cases, weather, riskZones] = await Promise.all([
     db.site.findMany({ orderBy: { nameEn: 'asc' } }),
     db.sourceRegistry.findMany({ orderBy: { adapter: 'asc' } }),
     db.bulletin.findMany({ orderBy: { sentAt: 'desc' }, take: 20 }),
@@ -44,6 +44,7 @@ export async function GET() {
       orderBy: { detectedAt: 'desc' },
     }),
     db.weatherInterval.findMany(),
+    db.riskZone.findMany({ include: { site: { select: { nameEn: true, nameBn: true, slug: true } } }, orderBy: [{ level: 'asc' }] }),
   ])
 
   const rainfallSummary: DashboardDataDTO['rainfallSummary'] = {}
@@ -59,7 +60,12 @@ export async function GET() {
     }
   }
 
-  const payload: DashboardDataDTO = {
+  // Compute risk zone summary
+  const redZones = riskZones.filter((z) => z.level === 'red')
+  const yellowZones = riskZones.filter((z) => z.level === 'yellow')
+  const greenZones = riskZones.filter((z) => z.level === 'green')
+
+  const payload: DashboardDataDTO & { riskZones?: unknown; riskSummary?: unknown } = {
     sites: sites.map(mapSite),
     cases: cases.map(mapCase),
     bulletins: bulletins.map(mapBulletin),
@@ -67,6 +73,28 @@ export async function GET() {
     jobs: jobs.map(mapJob),
     notifications: notifications.map(mapNotification),
     rainfallSummary,
+    riskZones: riskZones.map((z) => ({
+      id: z.id,
+      siteId: z.siteId,
+      siteNameEn: z.site?.nameEn ?? null,
+      siteNameBn: z.site?.nameBn ?? null,
+      siteSlug: z.site?.slug ?? null,
+      nameEn: z.nameEn,
+      nameBn: z.nameBn,
+      geometryJson: z.geometryJson,
+      level: z.level,
+      areaHectares: z.areaHectares,
+      reasonEn: z.reasonEn,
+      reasonBn: z.reasonBn,
+      factorsJson: z.factorsJson,
+      populationEstimate: z.populationEstimate,
+      source: z.source,
+    })),
+    riskSummary: {
+      red: { count: redZones.length, areaHectares: redZones.reduce((s, z) => s + z.areaHectares, 0), population: redZones.reduce((s, z) => s + (z.populationEstimate ?? 0), 0) },
+      yellow: { count: yellowZones.length, areaHectares: yellowZones.reduce((s, z) => s + z.areaHectares, 0), population: yellowZones.reduce((s, z) => s + (z.populationEstimate ?? 0), 0) },
+      green: { count: greenZones.length, areaHectares: greenZones.reduce((s, z) => s + z.areaHectares, 0), population: greenZones.reduce((s, z) => s + (z.populationEstimate ?? 0), 0) },
+    },
   }
 
   return NextResponse.json(payload)

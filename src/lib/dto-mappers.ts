@@ -35,7 +35,10 @@ export function mapSite(s: Site): SiteDTO {
     slopeMaxDeg: s.slopeMaxDeg,
     jurisdiction: s.jurisdiction,
     verificationSrc: s.verificationSrc,
-  }
+    riskLevel: (s as { riskLevel?: string }).riskLevel ?? 'green',
+    riskScore: (s as { riskScore?: number }).riskScore ?? 0,
+    riskReasonsJson: (s as { riskReasonsJson?: string }).riskReasonsJson ?? null,
+  } as SiteDTO
 }
 
 export function mapRawAsset(a: RawAsset, src: Pick<SourceRegistry, 'adapter' | 'product' | 'licence'>): RawAssetDTO {

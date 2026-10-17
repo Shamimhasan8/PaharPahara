@@ -47,11 +47,44 @@ model Site {
   slopeMaxDeg     Float?
   jurisdiction    String   @default("unverified") // verified_doe | verified_forest | unverified
   verificationSrc String?
+  // Risk level: red | yellow | green — computed from rainfall, slope, disturbance history, BMD alerts
+  riskLevel       String   @default("green") // red | yellow | green
+  riskScore       Float    @default(0) // 0-100, higher = more dangerous
+  riskReasonsJson String?  // JSON array of factors contributing to the risk score
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   cases           Case[]
   weatherIntervals WeatherInterval[]
+  riskZones       RiskZone[]
+}
+
+// ---------- Risk Zones (Red/Yellow/Green) ----------
+// Geographical zones with risk classification for map visualization.
+
+model RiskZone {
+  id          String   @id @default(cuid())
+  siteId      String?
+  site        Site?    @relation(fields: [siteId], references: [id])
+  nameEn      String
+  nameBn      String
+  // GeoJSON polygon (WGS84) — real geographical boundary
+  geometryJson String
+  // Risk level: red | yellow | green
+  level       String   // red | yellow | green
+  // Area in hectares covered by this zone
+  areaHectares Float
+  // Why this zone has this risk level
+  reasonEn    String
+  reasonBn    String
+  // Risk factors (JSON): slope, rainfall24h, rainfall72h, disturbanceHistory, bmdAlert, population
+  factorsJson String?
+  // Population estimate in this zone (if known)
+  populationEstimate Int?
+  // Source of this risk assessment
+  source      String   @default("system") // system | doe | bmd | manual
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // ---------- Source registry & raw assets (provenance) ----------

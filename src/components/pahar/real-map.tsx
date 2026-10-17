@@ -4,7 +4,7 @@
 // Uses next/dynamic to load the Leaflet map client-side only (avoids SSR window issue).
 
 import dynamic from 'next/dynamic'
-import type { SiteDTO, BulletinDTO, CaseDTO } from '@/lib/types/dto'
+import type { SiteDTO, BulletinDTO, CaseDTO, RiskZoneDTO } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 
 const RealMapInner = dynamic(
@@ -23,6 +23,7 @@ interface Props {
   sites: SiteDTO[]
   bulletins: BulletinDTO[]
   cases?: CaseDTO[]
+  riskZones?: RiskZoneDTO[]
   lang: Lang
   selectedSiteId?: string
   onSelectSite?: (slug: string) => void

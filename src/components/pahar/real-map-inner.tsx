@@ -7,15 +7,21 @@
 
 import 'leaflet/dist/leaflet.css'
 import { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polygon, useMap, LayersControl } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Circle, useMap, LayersControl } from 'react-leaflet'
 import L from 'leaflet'
-import type { SiteDTO, BulletinDTO, CaseDTO } from '@/lib/types/dto'
+import type { SiteDTO, BulletinDTO, CaseDTO, RiskZoneDTO } from '@/lib/types/dto'
 import type { Lang } from '@/lib/i18n'
 
 // Custom marker icon (SVG-based, no external image files needed)
-function createSiteIcon(isUnverified: boolean, isSelected: boolean, activeCount: number): L.DivIcon {
-  const bg = isUnverified ? '#f59e0b' : '#16a34a'
-  const ring = isSelected ? '#15803d' : 'white'
+// Uses risk level for color: red = danger, yellow = warning, green = safe
+function createSiteIcon(riskLevel: string, isSelected: boolean, activeCount: number): L.DivIcon {
+  const colors: Record<string, string> = {
+    red: '#dc2626',
+    yellow: '#f59e0b',
+    green: '#16a34a',
+  }
+  const bg = colors[riskLevel] ?? '#16a34a'
+  const ring = isSelected ? '#1e293b' : 'white'
   const size = isSelected ? 40 : 34
   const badge = activeCount > 0
     ? `<div style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:white;border-radius:999px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid white;font-family:sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.4)">${activeCount}</div>`
@@ -55,6 +61,7 @@ interface Props {
   sites: SiteDTO[]
   bulletins: BulletinDTO[]
   cases?: CaseDTO[]
+  riskZones?: RiskZoneDTO[]
   lang: Lang
   selectedSiteId?: string
   onSelectSite?: (slug: string) => void
@@ -66,6 +73,7 @@ export function RealMapInner({
   sites,
   bulletins,
   cases,
+  riskZones,
   lang,
   selectedSiteId,
   onSelectSite,
@@ -166,19 +174,69 @@ export function RealMapInner({
           </Polygon>
         ))}
 
+        {/* Risk Zone polygons — Red/Yellow/Green zones */}
+        {riskZones?.map((zone) => {
+          let positions: [number, number][] = []
+          try {
+            const g = JSON.parse(zone.geometryJson) as { type: string; coordinates: number[][][] }
+            if (g.type === 'Polygon' && g.coordinates?.[0]) {
+              positions = g.coordinates[0].map(([lng, lat]) => [lat, lng] as [number, number])
+            }
+          } catch { /* ignore */ }
+          if (positions.length === 0) return null
+
+          const zoneColors: Record<string, { color: string; fill: string }> = {
+            red: { color: '#dc2626', fill: '#dc2626' },
+            yellow: { color: '#f59e0b', fill: '#f59e0b' },
+            green: { color: '#16a34a', fill: '#16a34a' },
+          }
+          const zc = zoneColors[zone.level] ?? zoneColors.green
+
+          return (
+            <Polygon
+              key={zone.id}
+              positions={positions}
+              pathOptions={{
+                color: zc.color,
+                weight: 2,
+                opacity: 0.8,
+                fillColor: zc.fill,
+                fillOpacity: zone.level === 'red' ? 0.25 : zone.level === 'yellow' ? 0.15 : 0.08,
+              }}
+            >
+              <Popup>
+                <div style={{ minWidth: '220px', fontSize: '12px', fontFamily: 'system-ui, sans-serif' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px', color: zc.color }}>
+                    {zone.level === 'red' ? '🔴' : zone.level === 'yellow' ? '🟡' : '🟢'} {lang === 'bn' ? zone.nameBn : zone.nameEn}
+                  </div>
+                  <div style={{ color: '#666', fontSize: '11px', marginBottom: '6px' }}>
+                    {lang === 'en' ? 'Area' : 'এলাকা'}: <strong>{zone.areaHectares.toFixed(1)} ha</strong>
+                    {zone.populationEstimate && (
+                      <span> · {lang === 'en' ? 'Population' : 'জনসংখ্যা'}: <strong>{zone.populationEstimate.toLocaleString()}</strong></span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#444', lineHeight: '1.4' }}>
+                    {lang === 'bn' ? zone.reasonBn : zone.reasonEn}
+                  </div>
+                </div>
+              </Popup>
+            </Polygon>
+          )
+        })}
+
         {/* Site markers */}
         {sites.map((site) => {
-          const isUnverified = site.jurisdiction === 'unverified'
           const isSelected = selectedSiteId === site.id
           const activeCount = activeCasesBySite[site.id] ?? 0
           const siteCases = cases?.filter((c) => c.siteId === site.id) ?? []
           const activeCases = siteCases.filter((c) => !['reviewed', 'rejected'].includes(c.status))
+          const riskLevel = (site.riskLevel ?? 'green') as string
 
           return (
             <Marker
               key={site.id}
               position={[site.lat, site.lng]}
-              icon={createSiteIcon(isUnverified, isSelected, activeCount)}
+              icon={createSiteIcon(riskLevel, isSelected, activeCount)}
               eventHandlers={{
                 click: () => onSelectSite?.(site.slug),
               }}
