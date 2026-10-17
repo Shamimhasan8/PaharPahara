@@ -458,30 +458,27 @@ function StatCard({
   color: 'emerald' | 'amber' | 'sky' | 'rose'
   onClick?: () => void
 }) {
-  const colors = {
-    emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-900',
-    sky: 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border-sky-200 dark:border-sky-900',
-    rose: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200 dark:border-rose-900',
+  const accentColors = {
+    emerald: { bar: 'bg-emerald-500', icon: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300', value: 'text-emerald-700 dark:text-emerald-300' },
+    amber: { bar: 'bg-amber-500', icon: 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300', value: 'text-amber-700 dark:text-amber-300' },
+    sky: { bar: 'bg-sky-500', icon: 'bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300', value: 'text-sky-700 dark:text-sky-300' },
+    rose: { bar: 'bg-rose-500', icon: 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300', value: 'text-rose-700 dark:text-rose-300' },
   }
-  const iconWrap = {
-    emerald: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300',
-    amber: 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-300',
-    sky: 'bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300',
-    rose: 'bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-300',
-  }
+  const ac = accentColors[color]
   return (
     <Card
-      className={`${onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all' : ''} ${colors[color]}`}
+      className={`bg-card border-border/60 shadow-premium ${onClick ? 'cursor-pointer hover:shadow-premium-hover hover:-translate-y-0.5 transition-all' : ''} relative overflow-hidden`}
       onClick={onClick}
     >
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{label}</span>
-          <span className={`h-6 w-6 rounded-md flex items-center justify-center ${iconWrap[color]}`}>{icon}</span>
+      {/* Top accent bar */}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${ac.bar} opacity-80`} />
+      <CardContent className="p-4 pt-5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</span>
+          <span className={`h-7 w-7 rounded-lg flex items-center justify-center ${ac.icon}`}>{icon}</span>
         </div>
-        <div className="text-2xl font-bold leading-none tabular-nums">{value}</div>
-        <div className="text-[10px] opacity-70 mt-1.5 truncate leading-tight">{sub}</div>
+        <div className={`text-3xl font-bold leading-none tabular-nums ${ac.value}`}>{value}</div>
+        <div className="text-[10px] text-muted-foreground/80 mt-2 truncate leading-tight">{sub}</div>
       </CardContent>
     </Card>
   )

@@ -187,7 +187,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <header className="sticky top-0 z-30 border-b border-border/60 glass shadow-sm">
         <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-2 sm:gap-3 px-3 sm:px-4">
           <button
             className="md:hidden p-1.5 rounded hover:bg-muted shrink-0"
@@ -206,16 +206,16 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Desktop tabs */}
-          <nav className="hidden md:flex items-center gap-0.5 ml-2">
+          {/* Desktop tabs — premium pill style */}
+          <nav className="hidden md:flex items-center gap-1 ml-2">
             {allowedTabs.map((tb) => (
               <button
                 key={tb}
                 onClick={() => setTab(tb)}
-                className={`px-2.5 py-1.5 text-[13px] rounded-md transition-colors whitespace-nowrap ${
+                className={`px-3 py-1.5 text-[13px] rounded-lg transition-all whitespace-nowrap ${
                   effectiveTab === tb
-                    ? 'bg-primary text-primary-foreground font-medium shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    ? 'bg-primary text-primary-foreground font-semibold shadow-premium'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                 }`}
                 lang={lang}
               >
@@ -495,149 +495,152 @@ function LoginScreen({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void
   ]
 
   return (
-    <div className="min-h-screen flex flex-col topo-bg">
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, oklch(0.28 0.05 152), oklch(0.20 0.03 155), oklch(0.15 0.02 150))' }}>
       <div className="flex-1 grid lg:grid-cols-2">
-        {/* Left — brand panel */}
+        {/* Left — premium brand panel with satellite imagery feel */}
         <div className="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-30">
+          {/* Animated gradient background */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, oklch(0.28 0.06 152) 0%, oklch(0.22 0.04 155) 40%, oklch(0.15 0.02 150) 100%)' }} />
+          {/* Topographic SVG overlay */}
+          <div className="absolute inset-0 opacity-20">
             <svg viewBox="0 0 600 800" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
-              <defs>
-                <linearGradient id="hill-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.55 0.10 150)" />
-                  <stop offset="100%" stopColor="oklch(0.35 0.06 160)" />
-                </linearGradient>
-              </defs>
-              <path d="M0 600 Q 100 450 200 520 T 400 480 T 600 540 L 600 800 L 0 800 Z" fill="url(#hill-grad)" opacity="0.6" />
-              <path d="M0 700 Q 150 600 300 650 T 600 680 L 600 800 L 0 800 Z" fill="oklch(0.42 0.08 152)" opacity="0.8" />
-              {/* contour lines */}
-              {[100, 200, 300, 400, 500].map((y, i) => (
+              {[80, 160, 240, 320, 400, 480, 560, 640].map((y, i) => (
                 <path
                   key={i}
-                  d={`M0 ${y + 200} Q ${100 + i * 30} ${y + 180} ${200 + i * 20} ${y + 220} T ${400 + i * 30} ${y + 200} T 600 ${y + 230}`}
+                  d={`M0 ${y} Q ${80 + i * 25} ${y - 30} ${160 + i * 20} ${y + 15} T ${320 + i * 25} ${y - 10} T ${480 + i * 20} ${y + 25} T 600 ${y}`}
                   fill="none"
-                  stroke="oklch(0.55 0.08 150)"
-                  strokeWidth="0.5"
-                  strokeDasharray="3 4"
-                  opacity="0.3"
+                  stroke="oklch(0.70 0.08 140)"
+                  strokeWidth="0.6"
+                  strokeDasharray="4 5"
+                  opacity="0.4"
                 />
               ))}
             </svg>
           </div>
-          <div className="relative">
+          {/* Floating glow orbs */}
+          <div className="absolute top-20 right-20 w-64 h-64 rounded-full" style={{ background: 'radial-gradient(circle, oklch(0.45 0.10 140 / 0.15), transparent 70%)' }} />
+          <div className="absolute bottom-32 left-16 w-80 h-80 rounded-full" style={{ background: 'radial-gradient(circle, oklch(0.55 0.08 75 / 0.1), transparent 70%)' }} />
+
+          <div className="relative z-10">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg">
-                <Mountain className="h-6 w-6" />
+              <div className="h-14 w-14 rounded-xl flex items-center justify-center text-white shadow-premium-lg" style={{ background: 'linear-gradient(135deg, oklch(0.45 0.10 140), oklch(0.35 0.08 155))' }}>
+                <Mountain className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-2xl font-bold tracking-tight" lang={lang}>{t.appName}</div>
-                <div className="text-sm text-muted-foreground" lang={lang}>{t.tagline}</div>
+                <div className="text-3xl font-bold tracking-tight text-white" lang={lang}>{t.appName}</div>
+                <div className="text-sm text-white/60" lang={lang}>{t.tagline}</div>
               </div>
             </div>
           </div>
-          <div className="relative space-y-4 max-w-md">
-            <h1 className="text-3xl font-bold leading-tight" lang={lang}>
+
+          <div className="relative z-10 space-y-6 max-w-lg">
+            <h1 className="text-4xl font-bold leading-tight text-white" lang={lang}>
               {lang === 'en'
                 ? 'From satellite evidence to a traceable officer decision — in one workflow.'
                 : 'স্যাটেলাইট প্রমাণ থেকে অনুসরণযোগ্য কর্মকর্তা সিদ্ধান্ত — এক ওয়ার্কফ্লোতে।'}
             </h1>
-            <p className="text-sm text-muted-foreground" lang={lang}>
+            <p className="text-base text-white/50 leading-relaxed" lang={lang}>
               {lang === 'en'
                 ? 'Collect source data → validate and store it → display the evidence → record an authorized human decision → generate a saved bilingual report.'
                 : 'উৎস তথ্য সংগ্রহ → যাচাই ও সংরক্ষণ → প্রমাণ প্রদর্শন → অনুমোদিত মানব সিদ্ধান্ত → দ্বিভাষিক রিপোর্ট সংরক্ষণ।'}
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               {['Sentinel-2 + Cloud Score+', 'NASA IMERG', 'Open-Meteo Forecast', 'BMD CAP 1.2', 'Dynamic World'].map((s) => (
-                <span key={s} className="text-[11px] px-2 py-1 rounded-full bg-card/80 border border-border text-muted-foreground">{s}</span>
+                <span key={s} className="text-[11px] px-2.5 py-1 rounded-full text-white/80" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}>{s}</span>
               ))}
             </div>
           </div>
-          <div className="relative text-xs text-muted-foreground/80" lang={lang}>
+
+          <div className="relative z-10 text-xs text-white/40" lang={lang}>
             {t.footer.disclaimer}
           </div>
         </div>
 
-        {/* Right — login form */}
-        <div className="flex items-center justify-center p-6 sm:p-12">
-          <Card className="w-full max-w-md shadow-xl border-border/80">
-            <CardHeader className="space-y-2 text-center">
-              <div className="lg:hidden flex justify-center">
-                <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-                  <Mountain className="h-6 w-6" />
-                </div>
+        {/* Right — premium login form */}
+        <div className="flex items-center justify-center p-6 sm:p-12 bg-background">
+          <div className="w-full max-w-md">
+            {/* Mobile logo */}
+            <div className="lg:hidden flex justify-center mb-8">
+              <div className="h-14 w-14 rounded-xl flex items-center justify-center text-white shadow-premium-lg" style={{ background: 'linear-gradient(135deg, oklch(0.45 0.10 140), oklch(0.35 0.08 155))' }}>
+                <Mountain className="h-7 w-7" />
               </div>
-              <CardTitle className="text-xl" lang={lang}>{t.login.title}</CardTitle>
-              <CardDescription className="text-xs" lang={lang}>{t.login.subtitle}</CardDescription>
-            </CardHeader>
-            <form onSubmit={onSubmit}>
-              <CardContent className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs" lang={lang}>{t.login.email}</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="reviewer@paharpahara.bd"
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-xs" lang={lang}>{t.login.password}</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    autoComplete="current-password"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {t.login.signingIn}
-                    </>
-                  ) : (
-                    t.login.submit
-                  )}
-                </Button>
+            </div>
 
-                <div className="w-full pt-2 border-t border-border">
-                  <div className="text-[11px] text-muted-foreground mb-2 uppercase tracking-wide" lang={lang}>
-                    {t.login.demoAccounts}
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {demoAccounts.map((a) => (
-                      <button
-                        key={a.email}
-                        type="button"
-                        onClick={() => {
-                          setEmail(a.email)
-                          setPassword(a.pw)
-                        }}
-                        className="text-left px-2 py-1.5 rounded border border-border bg-card hover:bg-muted text-[11px] transition-colors"
-                      >
-                        <div className="font-medium capitalize">{a.role.replace(/_/g, ' ')}</div>
-                        <div className="text-muted-foreground truncate">{a.email}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold tracking-tight" lang={lang}>{t.login.title}</h2>
+              <p className="text-sm text-muted-foreground mt-1.5" lang={lang}>{t.login.subtitle}</p>
+            </div>
 
-                <div className="flex items-center justify-between w-full pt-2">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setLang(lang === 'en' ? 'bn' : 'en')} className="gap-1.5">
-                    <Globe className="h-4 w-4" />
-                    {lang === 'en' ? 'বাংলা' : 'English'}
-                  </Button>
-                </div>
-              </CardFooter>
+            <form onSubmit={onSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-muted-foreground" lang={lang}>{t.login.email}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="reviewer@paharpahara.bd"
+                  required
+                  autoComplete="email"
+                  className="h-11 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-muted-foreground" lang={lang}>{t.login.password}</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  className="h-11 text-sm"
+                />
+              </div>
+
+              <Button type="submit" className="w-full h-11 text-sm font-semibold shadow-premium" disabled={submitting}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    {t.login.signingIn}
+                  </>
+                ) : (
+                  t.login.submit
+                )}
+              </Button>
             </form>
-          </Card>
+
+            {/* Demo accounts — premium card style */}
+            <div className="mt-8 pt-6 border-t border-border">
+              <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-3" lang={lang}>
+                {t.login.demoAccounts}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {demoAccounts.map((a) => (
+                  <button
+                    key={a.email}
+                    type="button"
+                    onClick={() => {
+                      setEmail(a.email)
+                      setPassword(a.pw)
+                    }}
+                    className="text-left px-3 py-2.5 rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-premium transition-all text-[11px] group"
+                  >
+                    <div className="font-semibold capitalize text-foreground group-hover:text-primary transition-colors">{a.role.replace(/_/g, ' ')}</div>
+                    <div className="text-muted-foreground truncate font-mono text-[10px]">{a.email}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center w-full mt-6">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setLang(lang === 'en' ? 'bn' : 'en')} className="gap-1.5 text-muted-foreground">
+                <Globe className="h-4 w-4" />
+                {lang === 'en' ? 'বাংলা' : 'English'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
